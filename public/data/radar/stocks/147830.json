@@ -1,0 +1,729 @@
+{
+  "schema_version": "stock-preview.v1",
+  "data_level": "preview",
+  "code": "147830",
+  "name": "제룡산업",
+  "market": "KOSDAQ",
+  "sector": "벤처기업부",
+  "industry": "구조용 금속제품, 탱크 및 증기발생기 제조업",
+  "listing_date": "2012-02-13 00:00:00",
+  "run_id": "full_market_20260902_163423",
+  "generated_at": "2026-09-03T15:59:43.143154+09:00",
+  "collected_at": "2026-09-02T16:34:23+09:00",
+  "summary": {
+    "latest_price": 6760,
+    "price_as_of": "2026-09-02",
+    "market_cap_krw": 135200000000.0,
+    "change_1d_pct": -3.8406827880512084,
+    "high_52w": null,
+    "low_52w": null,
+    "drawdown_52w_pct": null,
+    "price_position_52w_pct": null
+  },
+  "valuation": {
+    "per": 6.6347124341065005,
+    "pbr": 1.4201000604548717,
+    "ev_ebitda": null,
+    "ev_operating_profit": null,
+    "ttm_roe_pct": 21.4,
+    "debt_ratio_pct": 12.24,
+    "interest_coverage": null,
+    "ttm_revenue": 50744266685.0,
+    "ttm_operating_profit": 15552364431.0,
+    "ttm_net_income": 20377672935.0,
+    "ttm_operating_cash_flow": null
+  },
+  "prices": [
+    {
+      "date": "2026-06-01",
+      "open": 8640,
+      "high": 9030,
+      "low": 8370,
+      "close": 8400,
+      "volume": 468805
+    },
+    {
+      "date": "2026-06-02",
+      "open": 8310,
+      "high": 8350,
+      "low": 7970,
+      "close": 8080,
+      "volume": 354322
+    },
+    {
+      "date": "2026-06-04",
+      "open": 8010,
+      "high": 8300,
+      "low": 7860,
+      "close": 7930,
+      "volume": 230651
+    },
+    {
+      "date": "2026-06-05",
+      "open": 7850,
+      "high": 7850,
+      "low": 7480,
+      "close": 7700,
+      "volume": 295898
+    },
+    {
+      "date": "2026-06-08",
+      "open": 7250,
+      "high": 7400,
+      "low": 7060,
+      "close": 7150,
+      "volume": 315979
+    },
+    {
+      "date": "2026-06-09",
+      "open": 7220,
+      "high": 7610,
+      "low": 7220,
+      "close": 7500,
+      "volume": 309928
+    },
+    {
+      "date": "2026-06-10",
+      "open": 7480,
+      "high": 7680,
+      "low": 7250,
+      "close": 7500,
+      "volume": 220771
+    },
+    {
+      "date": "2026-06-11",
+      "open": 7280,
+      "high": 7500,
+      "low": 7120,
+      "close": 7430,
+      "volume": 157840
+    },
+    {
+      "date": "2026-06-12",
+      "open": 7700,
+      "high": 7870,
+      "low": 7610,
+      "close": 7650,
+      "volume": 241051
+    },
+    {
+      "date": "2026-06-15",
+      "open": 8200,
+      "high": 8300,
+      "low": 7890,
+      "close": 7960,
+      "volume": 469819
+    },
+    {
+      "date": "2026-06-16",
+      "open": 8070,
+      "high": 8140,
+      "low": 7830,
+      "close": 7960,
+      "volume": 236177
+    },
+    {
+      "date": "2026-06-17",
+      "open": 7990,
+      "high": 8190,
+      "low": 7800,
+      "close": 7940,
+      "volume": 304646
+    },
+    {
+      "date": "2026-06-18",
+      "open": 7950,
+      "high": 8050,
+      "low": 7720,
+      "close": 7750,
+      "volume": 192736
+    },
+    {
+      "date": "2026-06-19",
+      "open": 7700,
+      "high": 7970,
+      "low": 7210,
+      "close": 7400,
+      "volume": 263521
+    },
+    {
+      "date": "2026-06-22",
+      "open": 7400,
+      "high": 7590,
+      "low": 7170,
+      "close": 7340,
+      "volume": 175517
+    },
+    {
+      "date": "2026-06-23",
+      "open": 7330,
+      "high": 7500,
+      "low": 6780,
+      "close": 6780,
+      "volume": 264829
+    },
+    {
+      "date": "2026-06-24",
+      "open": 6670,
+      "high": 6900,
+      "low": 6590,
+      "close": 6780,
+      "volume": 204524
+    },
+    {
+      "date": "2026-06-25",
+      "open": 6840,
+      "high": 7010,
+      "low": 6570,
+      "close": 6640,
+      "volume": 182895
+    },
+    {
+      "date": "2026-06-26",
+      "open": 6550,
+      "high": 6630,
+      "low": 6040,
+      "close": 6150,
+      "volume": 291433
+    },
+    {
+      "date": "2026-06-29",
+      "open": 6250,
+      "high": 6840,
+      "low": 6250,
+      "close": 6810,
+      "volume": 177456
+    },
+    {
+      "date": "2026-06-30",
+      "open": 7110,
+      "high": 7150,
+      "low": 6700,
+      "close": 6750,
+      "volume": 221833
+    },
+    {
+      "date": "2026-07-01",
+      "open": 6820,
+      "high": 7400,
+      "low": 6820,
+      "close": 7360,
+      "volume": 388171
+    },
+    {
+      "date": "2026-07-02",
+      "open": 7360,
+      "high": 7370,
+      "low": 6900,
+      "close": 6930,
+      "volume": 305001
+    },
+    {
+      "date": "2026-07-03",
+      "open": 7060,
+      "high": 7290,
+      "low": 6590,
+      "close": 7140,
+      "volume": 226689
+    },
+    {
+      "date": "2026-07-06",
+      "open": 7180,
+      "high": 7270,
+      "low": 6890,
+      "close": 7080,
+      "volume": 165998
+    },
+    {
+      "date": "2026-07-07",
+      "open": 6980,
+      "high": 7150,
+      "low": 6690,
+      "close": 6900,
+      "volume": 202248
+    },
+    {
+      "date": "2026-07-08",
+      "open": 6710,
+      "high": 7000,
+      "low": 6400,
+      "close": 6460,
+      "volume": 235771
+    },
+    {
+      "date": "2026-07-09",
+      "open": 6470,
+      "high": 6730,
+      "low": 6280,
+      "close": 6470,
+      "volume": 171974
+    },
+    {
+      "date": "2026-07-10",
+      "open": 6570,
+      "high": 6990,
+      "low": 6570,
+      "close": 6870,
+      "volume": 177271
+    },
+    {
+      "date": "2026-07-13",
+      "open": 6900,
+      "high": 7070,
+      "low": 6410,
+      "close": 6410,
+      "volume": 211130
+    },
+    {
+      "date": "2026-07-14",
+      "open": 6210,
+      "high": 6470,
+      "low": 6110,
+      "close": 6390,
+      "volume": 197172
+    },
+    {
+      "date": "2026-07-15",
+      "open": 6480,
+      "high": 6700,
+      "low": 6480,
+      "close": 6640,
+      "volume": 117201
+    },
+    {
+      "date": "2026-07-16",
+      "open": 6540,
+      "high": 6540,
+      "low": 6250,
+      "close": 6310,
+      "volume": 72514
+    },
+    {
+      "date": "2026-07-20",
+      "open": 6120,
+      "high": 6380,
+      "low": 6070,
+      "close": 6110,
+      "volume": 140778
+    },
+    {
+      "date": "2026-07-21",
+      "open": 6070,
+      "high": 6290,
+      "low": 6010,
+      "close": 6200,
+      "volume": 118734
+    },
+    {
+      "date": "2026-07-22",
+      "open": 6340,
+      "high": 6480,
+      "low": 6210,
+      "close": 6210,
+      "volume": 125124
+    },
+    {
+      "date": "2026-07-23",
+      "open": 6260,
+      "high": 6630,
+      "low": 6260,
+      "close": 6590,
+      "volume": 124167
+    },
+    {
+      "date": "2026-07-24",
+      "open": 6490,
+      "high": 6530,
+      "low": 6260,
+      "close": 6310,
+      "volume": 96220
+    },
+    {
+      "date": "2026-07-27",
+      "open": 6370,
+      "high": 6500,
+      "low": 6240,
+      "close": 6310,
+      "volume": 107282
+    },
+    {
+      "date": "2026-07-28",
+      "open": 6170,
+      "high": 6180,
+      "low": 5740,
+      "close": 5790,
+      "volume": 214716
+    },
+    {
+      "date": "2026-07-29",
+      "open": 5790,
+      "high": 5910,
+      "low": 5190,
+      "close": 5290,
+      "volume": 215362
+    },
+    {
+      "date": "2026-07-30",
+      "open": 5040,
+      "high": 5540,
+      "low": 5040,
+      "close": 5350,
+      "volume": 157783
+    },
+    {
+      "date": "2026-07-31",
+      "open": 5540,
+      "high": 5970,
+      "low": 5530,
+      "close": 5950,
+      "volume": 146800
+    },
+    {
+      "date": "2026-08-03",
+      "open": 5870,
+      "high": 6120,
+      "low": 5790,
+      "close": 5900,
+      "volume": 84330
+    },
+    {
+      "date": "2026-08-04",
+      "open": 5980,
+      "high": 6210,
+      "low": 5980,
+      "close": 6170,
+      "volume": 97800
+    },
+    {
+      "date": "2026-08-05",
+      "open": 6370,
+      "high": 7320,
+      "low": 6300,
+      "close": 6850,
+      "volume": 1248850
+    },
+    {
+      "date": "2026-08-06",
+      "open": 6790,
+      "high": 6890,
+      "low": 6620,
+      "close": 6750,
+      "volume": 187517
+    },
+    {
+      "date": "2026-08-07",
+      "open": 6770,
+      "high": 6870,
+      "low": 6540,
+      "close": 6690,
+      "volume": 90294
+    },
+    {
+      "date": "2026-08-10",
+      "open": 6750,
+      "high": 7010,
+      "low": 6750,
+      "close": 6970,
+      "volume": 205437
+    },
+    {
+      "date": "2026-08-11",
+      "open": 6950,
+      "high": 7040,
+      "low": 6800,
+      "close": 6920,
+      "volume": 81986
+    },
+    {
+      "date": "2026-08-12",
+      "open": 7130,
+      "high": 7170,
+      "low": 6930,
+      "close": 7100,
+      "volume": 270551
+    },
+    {
+      "date": "2026-08-13",
+      "open": 7100,
+      "high": 7190,
+      "low": 6990,
+      "close": 7010,
+      "volume": 361173
+    },
+    {
+      "date": "2026-08-14",
+      "open": 7080,
+      "high": 7240,
+      "low": 6830,
+      "close": 7220,
+      "volume": 242844
+    },
+    {
+      "date": "2026-08-18",
+      "open": 7340,
+      "high": 7620,
+      "low": 7120,
+      "close": 7260,
+      "volume": 522829
+    },
+    {
+      "date": "2026-08-19",
+      "open": 7050,
+      "high": 7320,
+      "low": 6870,
+      "close": 6970,
+      "volume": 226820
+    },
+    {
+      "date": "2026-08-20",
+      "open": 7050,
+      "high": 7080,
+      "low": 6870,
+      "close": 6890,
+      "volume": 174526
+    },
+    {
+      "date": "2026-08-21",
+      "open": 6790,
+      "high": 6830,
+      "low": 6580,
+      "close": 6600,
+      "volume": 222005
+    },
+    {
+      "date": "2026-08-24",
+      "open": 6610,
+      "high": 6760,
+      "low": 6550,
+      "close": 6600,
+      "volume": 93760
+    },
+    {
+      "date": "2026-08-25",
+      "open": 6590,
+      "high": 6900,
+      "low": 6390,
+      "close": 6900,
+      "volume": 85889
+    },
+    {
+      "date": "2026-08-26",
+      "open": 6900,
+      "high": 7020,
+      "low": 6810,
+      "close": 6990,
+      "volume": 64020
+    },
+    {
+      "date": "2026-08-27",
+      "open": 7140,
+      "high": 7280,
+      "low": 7060,
+      "close": 7110,
+      "volume": 158650
+    },
+    {
+      "date": "2026-08-28",
+      "open": 7060,
+      "high": 7140,
+      "low": 6970,
+      "close": 7050,
+      "volume": 98648
+    },
+    {
+      "date": "2026-08-31",
+      "open": 6980,
+      "high": 7080,
+      "low": 6820,
+      "close": 7070,
+      "volume": 71026
+    },
+    {
+      "date": "2026-09-01",
+      "open": 7070,
+      "high": 7090,
+      "low": 6900,
+      "close": 7030,
+      "volume": 69055
+    },
+    {
+      "date": "2026-09-02",
+      "open": 6830,
+      "high": 6950,
+      "low": 6760,
+      "close": 6760,
+      "volume": 87465
+    }
+  ],
+  "quarters": [],
+  "events": [],
+  "radar": {
+    "code": "147830",
+    "name": "제룡산업",
+    "market": "KOSDAQ",
+    "sector": "벤처기업부",
+    "market_cap_krw": 135200000000.0,
+    "primary_lens": "quality",
+    "matched_lenses": [
+      "quality"
+    ],
+    "lenses": {
+      "quality": {
+        "lens": "quality",
+        "label": "Quality",
+        "matched": true,
+        "band": "review",
+        "evidence_count": 6,
+        "evidence_ratio_pct": 86,
+        "coverage_pct": 86,
+        "evidence": [
+          {
+            "key": "positive_ocf",
+            "label": "TTM 영업현금흐름 양수",
+            "value": 21943260431.0,
+            "comparison": "> 0",
+            "period": "TTM",
+            "source": "DART 재무"
+          },
+          {
+            "key": "profit_persistence",
+            "label": "최근 4개 분기 중 4개 영업흑자",
+            "value": 4,
+            "comparison": ">= 4",
+            "period": "최근 분기",
+            "source": "DART 재무"
+          },
+          {
+            "key": "cash_conversion",
+            "label": "영업이익의 현금 전환 양호",
+            "value": 1.41,
+            "comparison": ">= 1.3",
+            "period": "TTM",
+            "source": "DART 재무"
+          },
+          {
+            "key": "roe",
+            "label": "TTM ROE 기준 통과",
+            "value": 21.4,
+            "comparison": ">= 18",
+            "period": "TTM",
+            "source": "DART 재무"
+          },
+          {
+            "key": "debt_ratio",
+            "label": "부채비율 기준 통과",
+            "value": 12.2,
+            "comparison": "<= 60%",
+            "period": "최근 보고서",
+            "source": "DART 재무"
+          },
+          {
+            "key": "positive_margin",
+            "label": "TTM 영업이익률 기준 통과",
+            "value": 30.6,
+            "comparison": ">= 12%",
+            "period": "TTM",
+            "source": "DART 재무"
+          }
+        ],
+        "contradictions": [],
+        "qualified": true
+      },
+      "improvement": {
+        "lens": "improvement",
+        "label": "Improvement",
+        "matched": false,
+        "band": "review",
+        "evidence_count": 2,
+        "evidence_ratio_pct": 33,
+        "coverage_pct": 67,
+        "evidence": [
+          {
+            "key": "revenue_growth",
+            "label": "분기 매출 성장",
+            "value": 66.8,
+            "comparison": ">= 25% YoY",
+            "period": "20262Q",
+            "source": "DART 재무"
+          },
+          {
+            "key": "operating_profit_growth",
+            "label": "분기 영업이익 증가",
+            "value": 83.9,
+            "comparison": ">= 50% YoY",
+            "period": "20262Q",
+            "source": "DART 재무"
+          }
+        ],
+        "contradictions": [],
+        "qualified": false
+      },
+      "dislocation": {
+        "lens": "dislocation",
+        "label": "Dislocation",
+        "matched": false,
+        "band": "review",
+        "evidence_count": 2,
+        "evidence_ratio_pct": 40,
+        "coverage_pct": 92,
+        "evidence": [
+          {
+            "key": "drawdown",
+            "label": "52주 고점 대비 가격 하락",
+            "value": -56.1,
+            "comparison": "<= -35%",
+            "period": "최근 252거래일",
+            "source": "KRX 가격"
+          },
+          {
+            "key": "extreme_drawdown",
+            "label": "극단적 가격 하락 구간",
+            "value": -56.1,
+            "comparison": "<= -50%",
+            "period": "최근 252거래일",
+            "source": "KRX 가격"
+          }
+        ],
+        "contradictions": [],
+        "qualified": false
+      },
+      "event": {
+        "lens": "event",
+        "label": "Event",
+        "matched": false,
+        "band": "review",
+        "evidence_count": 0,
+        "evidence_ratio_pct": 0,
+        "coverage_pct": 0,
+        "evidence": [],
+        "contradictions": [],
+        "qualified": false
+      }
+    },
+    "plot": {
+      "evidence_density_pct": 86,
+      "coverage_pct": 86
+    },
+    "contradictions": [],
+    "warnings": [],
+    "as_of": "2026-09-02",
+    "latest_price_date": "2026-09-02",
+    "freshness": "latest"
+  },
+  "source_status": {
+    "prices": {
+      "status": "ok",
+      "source": "네이버 금융 일별 시세",
+      "as_of": "2026-09-02",
+      "record_count": 65,
+      "collected_at": "2026-09-02T16:34:23+09:00"
+    },
+    "financials": {
+      "status": "partial",
+      "source": "Radar 기본 재무",
+      "as_of": "2026 2Q",
+      "warning": "상세 재무는 관심종목 등록 후 수집합니다."
+    }
+  },
+  "warnings": []
+}

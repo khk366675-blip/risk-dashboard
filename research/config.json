@@ -1,0 +1,13 @@
+{
+  "storage_dir": "data/research",
+  "database_name": "watchlist.sqlite",
+  "preview_dir": "public/data/radar/stocks",
+  "job_timeout_ms": 1200000,
+  "poll_interval_ms": 2500,
+  "followup_stale_hours": 72,
+  "followup_price_points": 30,
+  "followup_event_preview_limit": 6,
+  "financial_quarters": 8,
+  "filing_lookback_days": 365,
+  "filing_page_limit": 100
+}

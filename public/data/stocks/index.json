@@ -1,0 +1,266 @@
+{
+  "schema_version": "stock-detail-index.v1",
+  "generated_at": "2026-09-03T15:31:04+09:00",
+  "items": [
+    {
+      "code": "043260",
+      "name": "성호전자",
+      "path": "/data/stocks/043260.json"
+    },
+    {
+      "code": "196170",
+      "name": "알테오젠",
+      "path": "/data/stocks/196170.json"
+    },
+    {
+      "code": "035760",
+      "name": "CJ ENM",
+      "path": "/data/stocks/035760.json"
+    },
+    {
+      "code": "054540",
+      "name": "삼영엠텍",
+      "path": "/data/stocks/054540.json"
+    },
+    {
+      "code": "178320",
+      "name": "서진시스템",
+      "path": "/data/stocks/178320.json"
+    },
+    {
+      "code": "062970",
+      "name": "한국첨단소재",
+      "path": "/data/stocks/062970.json"
+    },
+    {
+      "code": "084110",
+      "name": "휴온스글로벌",
+      "path": "/data/stocks/084110.json"
+    },
+    {
+      "code": "102940",
+      "name": "코오롱생명과학",
+      "path": "/data/stocks/102940.json"
+    },
+    {
+      "code": "383220",
+      "name": "F&F",
+      "path": "/data/stocks/383220.json"
+    },
+    {
+      "code": "403870",
+      "name": "HPSP",
+      "path": "/data/stocks/403870.json"
+    },
+    {
+      "code": "204620",
+      "name": "글로벌텍스프리",
+      "path": "/data/stocks/204620.json"
+    },
+    {
+      "code": "403850",
+      "name": "더핑크퐁컴퍼니",
+      "path": "/data/stocks/403850.json"
+    },
+    {
+      "code": "019010",
+      "name": "베뉴지",
+      "path": "/data/stocks/019010.json"
+    },
+    {
+      "code": "207940",
+      "name": "삼성바이오로직스",
+      "path": "/data/stocks/207940.json"
+    },
+    {
+      "code": "462870",
+      "name": "시프트업",
+      "path": "/data/stocks/462870.json"
+    },
+    {
+      "code": "260970",
+      "name": "에스앤디",
+      "path": "/data/stocks/260970.json"
+    },
+    {
+      "code": "101490",
+      "name": "에스앤에스텍",
+      "path": "/data/stocks/101490.json"
+    },
+    {
+      "code": "170920",
+      "name": "엘티씨",
+      "path": "/data/stocks/170920.json"
+    },
+    {
+      "code": "101160",
+      "name": "월덱스",
+      "path": "/data/stocks/101160.json"
+    },
+    {
+      "code": "084370",
+      "name": "유진테크",
+      "path": "/data/stocks/084370.json"
+    },
+    {
+      "code": "079900",
+      "name": "전진건설로봇",
+      "path": "/data/stocks/079900.json"
+    },
+    {
+      "code": "147830",
+      "name": "제룡산업",
+      "path": "/data/stocks/147830.json"
+    },
+    {
+      "code": "033100",
+      "name": "제룡전기",
+      "path": "/data/stocks/033100.json"
+    },
+    {
+      "code": "023160",
+      "name": "태광",
+      "path": "/data/stocks/023160.json"
+    },
+    {
+      "code": "031980",
+      "name": "피에스케이홀딩스",
+      "path": "/data/stocks/031980.json"
+    },
+    {
+      "code": "267270",
+      "name": "HD건설기계",
+      "path": "/data/stocks/267270.json"
+    },
+    {
+      "code": "051900",
+      "name": "LG생활건강",
+      "path": "/data/stocks/051900.json"
+    },
+    {
+      "code": "255220",
+      "name": "SG",
+      "path": "/data/stocks/255220.json"
+    },
+    {
+      "code": "012200",
+      "name": "계양전기",
+      "path": "/data/stocks/012200.json"
+    },
+    {
+      "code": "389260",
+      "name": "대명에너지",
+      "path": "/data/stocks/389260.json"
+    },
+    {
+      "code": "226340",
+      "name": "본느",
+      "path": "/data/stocks/226340.json"
+    },
+    {
+      "code": "119830",
+      "name": "아이텍",
+      "path": "/data/stocks/119830.json"
+    },
+    {
+      "code": "161000",
+      "name": "애경케미칼",
+      "path": "/data/stocks/161000.json"
+    },
+    {
+      "code": "086520",
+      "name": "에코프로",
+      "path": "/data/stocks/086520.json"
+    },
+    {
+      "code": "247540",
+      "name": "에코프로비엠",
+      "path": "/data/stocks/247540.json"
+    },
+    {
+      "code": "232140",
+      "name": "와이씨",
+      "path": "/data/stocks/232140.json"
+    },
+    {
+      "code": "030530",
+      "name": "원익홀딩스",
+      "path": "/data/stocks/030530.json"
+    },
+    {
+      "code": "320000",
+      "name": "한울반도체",
+      "path": "/data/stocks/320000.json"
+    },
+    {
+      "code": "130660",
+      "name": "한전산업",
+      "path": "/data/stocks/130660.json"
+    },
+    {
+      "code": "329180",
+      "name": "HD현대중공업",
+      "path": "/data/stocks/329180.json"
+    },
+    {
+      "code": "097230",
+      "name": "HJ중공업",
+      "path": "/data/stocks/097230.json"
+    },
+    {
+      "code": "034730",
+      "name": "SK",
+      "path": "/data/stocks/034730.json"
+    },
+    {
+      "code": "096770",
+      "name": "SK이노베이션",
+      "path": "/data/stocks/096770.json"
+    },
+    {
+      "code": "144960",
+      "name": "뉴파워프라즈마",
+      "path": "/data/stocks/144960.json"
+    },
+    {
+      "code": "222800",
+      "name": "심텍",
+      "path": "/data/stocks/222800.json"
+    },
+    {
+      "code": "036710",
+      "name": "심텍홀딩스",
+      "path": "/data/stocks/036710.json"
+    },
+    {
+      "code": "159010",
+      "name": "아스플로",
+      "path": "/data/stocks/159010.json"
+    },
+    {
+      "code": "080580",
+      "name": "오킨스전자",
+      "path": "/data/stocks/080580.json"
+    },
+    {
+      "code": "005950",
+      "name": "이수화학",
+      "path": "/data/stocks/005950.json"
+    },
+    {
+      "code": "049630",
+      "name": "재영솔루텍",
+      "path": "/data/stocks/049630.json"
+    },
+    {
+      "code": "067310",
+      "name": "하나마이크론",
+      "path": "/data/stocks/067310.json"
+    },
+    {
+      "code": "298000",
+      "name": "효성화학",
+      "path": "/data/stocks/298000.json"
+    }
+  ]
+}
