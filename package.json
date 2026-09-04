@@ -8,6 +8,7 @@
   "scripts": {
     "predev": "node scripts/local-data.mjs auto",
     "dev": "next dev --webpack",
+    "prestart": "node scripts/local-data.mjs auto",
     "backup": "node scripts/local-data.mjs create",
     "backup:list": "node scripts/local-data.mjs list",
     "backup:verify": "node scripts/local-data.mjs verify",

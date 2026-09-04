@@ -17,9 +17,18 @@ test('mobile session token is signed and rejects mutation', () => {
 test('local mobile snapshot is compact and excludes local paths', () => {
   const snapshot = buildLocalMobileSnapshot();
   const serialized = JSON.stringify(snapshot);
-  assert.equal(snapshot.schema_version, 'mobile-dashboard.v1');
+  assert.equal(snapshot.schema_version, 'mobile-dashboard.v2');
   assert.ok(snapshot.generated_at);
   assert.ok(snapshot.market.assets.length > 0);
+  assert.ok(
+    snapshot.market.assets.every(
+      (asset) => Array.isArray(asset.sparkline) && asset.sparkline.length <= 60,
+    ),
+  );
+  assert.equal(
+    snapshot.radar.candidates.length,
+    snapshot.radar.candidate_count,
+  );
   assert.ok(snapshot.stocks.every((stock) => /^\d{6}$/.test(stock.code)));
   assert.doesNotMatch(serialized, /[A-Z]:\\/i);
   assert.doesNotMatch(serialized, /OPENAI_API_KEY|DART_API_KEY|SUPABASE_/);

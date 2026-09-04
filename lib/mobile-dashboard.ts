@@ -10,7 +10,7 @@ import type {
   ThesisStatusRecord,
 } from './research-workbench';
 
-export const mobileSnapshotSchema = 'mobile-dashboard.v1' as const;
+export const mobileSnapshotSchema = 'mobile-dashboard.v2' as const;
 
 export type MobileMarketAsset = {
   key: string;
@@ -19,9 +19,13 @@ export type MobileMarketAsset = {
   unit: string;
   value: number | null;
   change_1d_pct: number | null;
+  change_5d_pct?: number | null;
   change_20d_pct: number | null;
+  change_60d_pct?: number | null;
+  position_252d_pct?: number | null;
   as_of: string | null;
   freshness: string;
+  sparkline?: Array<{ date: string; value: number }>;
 };
 
 export type MobileMarket = {
@@ -65,6 +69,18 @@ export type MobileThesis = {
   checks: string[];
   review: ThesisStatusRecord;
   evidence: MobileEvidenceItem[];
+  ai_review?: {
+    created_at: string;
+    model: string;
+    thesis_revision: number;
+    questions: Array<{
+      kind: 'support' | 'challenge' | 'clarification';
+      question: string;
+      why: string;
+      look_for: string;
+      weakening_signal: string;
+    }>;
+  } | null;
 };
 
 export type MobileStock = {
@@ -90,6 +106,24 @@ export type MobileRadarSummary = {
   universe_count: number;
   candidate_count: number;
   lens_counts: Partial<Record<Lens, number>>;
+  candidates?: Array<{
+    code: string;
+    name: string;
+    market: string;
+    sector: string;
+    market_cap_krw: number | null;
+    primary_lens: Lens;
+    matched_lenses: Lens[];
+    highlights: Array<{
+      label: string;
+      value: number | string | null;
+      comparison: string;
+      period: string;
+    }>;
+    contradictions: string[];
+    warnings: string[];
+    freshness: 'latest' | 'stale';
+  }>;
 };
 
 export type MobileSnapshot = {

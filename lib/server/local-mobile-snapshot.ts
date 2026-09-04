@@ -53,6 +53,59 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
           quarters: detail.quarters.slice(-8),
           events: detail.events.slice(0, 16),
           theses: (research?.theses ?? []).map((thesis) => {
+            const aiRow = owner.db
+              .prepare(
+                `SELECT created_at,model,thesis_revision,answer_json
+                 FROM thesis_ai_runs
+                 WHERE thesis_id=? AND state='completed' AND answer_json IS NOT NULL
+                 ORDER BY created_at DESC,rowid DESC LIMIT 1`,
+              )
+              .get(thesis.id);
+            let aiReview = null;
+            if (aiRow) {
+              try {
+                const answer = JSON.parse(String(aiRow.answer_json)) as {
+                  suggestions?: Array<{
+                    kind?: string;
+                    question?: string;
+                    why?: string;
+                    look_for?: string;
+                    weakening_signal?: string;
+                  }>;
+                };
+                const questions = (answer.suggestions ?? []).flatMap((entry) =>
+                  ['support', 'challenge', 'clarification'].includes(
+                    String(entry.kind),
+                  ) &&
+                  typeof entry.question === 'string' &&
+                  typeof entry.why === 'string' &&
+                  typeof entry.look_for === 'string' &&
+                  typeof entry.weakening_signal === 'string'
+                    ? [
+                        {
+                          kind: entry.kind as
+                            | 'support'
+                            | 'challenge'
+                            | 'clarification',
+                          question: entry.question,
+                          why: entry.why,
+                          look_for: entry.look_for,
+                          weakening_signal: entry.weakening_signal,
+                        },
+                      ]
+                    : [],
+                );
+                if (questions.length)
+                  aiReview = {
+                    created_at: String(aiRow.created_at),
+                    model: String(aiRow.model),
+                    thesis_revision: Number(aiRow.thesis_revision),
+                    questions,
+                  };
+              } catch {
+                aiReview = null;
+              }
+            }
             const evidence: MobileEvidenceItem[] = [
               ...documents.list(item.code, thesis.id).map((entry) => ({
                 id: entry.id,
@@ -108,6 +161,7 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
               checks: thesis.content.checks.map((check) => check.text),
               review: thesis.review,
               evidence,
+              ai_review: aiReview,
             };
           }),
           kpis: system.snapshot(item.code).kpis,
@@ -131,9 +185,13 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
           unit: asset.unit,
           value: asset.value,
           change_1d_pct: asset.change_1d_pct,
+          change_5d_pct: asset.change_5d_pct,
           change_20d_pct: asset.change_20d_pct,
+          change_60d_pct: asset.change_60d_pct,
+          position_252d_pct: asset.position_252d_pct,
           as_of: asset.as_of,
           freshness: asset.freshness,
+          sparkline: (asset.sparkline ?? []).slice(-60),
         })),
       },
       radar: {
@@ -145,6 +203,26 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
           radar.summary.standard_eligible_count,
         candidate_count: radar.summary.candidate_unique_count,
         lens_counts: radar.summary.lens_counts,
+        candidates: radar.candidates.map((candidate) => ({
+          code: candidate.code,
+          name: candidate.name,
+          market: candidate.market,
+          sector: candidate.sector,
+          market_cap_krw: candidate.market_cap_krw,
+          primary_lens: candidate.primary_lens,
+          matched_lenses: candidate.matched_lenses,
+          highlights: candidate.lenses[candidate.primary_lens].evidence
+            .slice(0, 3)
+            .map((evidence) => ({
+              label: evidence.label,
+              value: evidence.value,
+              comparison: evidence.comparison,
+              period: evidence.period,
+            })),
+          contradictions: candidate.contradictions.slice(0, 3),
+          warnings: candidate.warnings.slice(0, 2),
+          freshness: candidate.freshness,
+        })),
       },
       stocks,
       learning: system.learning(),

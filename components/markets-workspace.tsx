@@ -131,8 +131,12 @@ const assetNotes: Record<string, { role: string; watch: string }> = {
   },
 };
 
-export function MarketsWorkspace() {
-  const [snapshot, setSnapshot] = useState<MarketSnapshot>(marketSnapshot);
+export function MarketsWorkspace({
+  initialSnapshot = marketSnapshot,
+}: {
+  initialSnapshot?: MarketSnapshot;
+}) {
+  const [snapshot, setSnapshot] = useState<MarketSnapshot>(initialSnapshot);
   const [selectedKey, setSelectedKey] = useState(snapshot.assets[0]?.key ?? '');
   const [selectedGroup, setSelectedGroup] =
     useState<MarketGroup>('global_equity');

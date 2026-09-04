@@ -34,6 +34,21 @@ function SetupRequired({ message }: { message: string }) {
 }
 
 export default async function MobilePage() {
+  const hostedMobile = Boolean(
+    process.env.VERCEL || process.env.DASHBOARD_MODE === 'mobile',
+  );
+  if (!hostedMobile) {
+    const { buildLocalMobileSnapshot } = await import(
+      '@/lib/server/local-mobile-snapshot'
+    );
+    return (
+      <MobileDashboard
+        snapshot={buildLocalMobileSnapshot()}
+        initialNotes={[]}
+        notesEnabled={false}
+      />
+    );
+  }
   const cloud = mobileCloudEnv();
   const authConfigured = Boolean(
     process.env.MOBILE_ACCESS_PASSWORD && process.env.MOBILE_SESSION_SECRET,
@@ -65,16 +80,5 @@ export default async function MobilePage() {
       />
     );
   }
-  if (process.env.VERCEL)
-    return <SetupRequired message="Supabase 연결 환경변수가 설정되지 않았습니다." />;
-  const { buildLocalMobileSnapshot } = await import(
-    '@/lib/server/local-mobile-snapshot'
-  );
-  return (
-    <MobileDashboard
-      snapshot={buildLocalMobileSnapshot()}
-      initialNotes={[]}
-      notesEnabled={false}
-    />
-  );
+  return <SetupRequired message="Supabase 연결 환경변수가 설정되지 않았습니다." />;
 }

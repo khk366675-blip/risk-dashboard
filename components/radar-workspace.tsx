@@ -48,8 +48,12 @@ import {
 const RadarRunContext = createContext<RadarRun>(initialRadarRun);
 const useRadarRun = () => useContext(RadarRunContext);
 
-export default function RadarWorkspace() {
-  const [radarRun, setRadarRun] = useState<RadarRun>(initialRadarRun);
+export default function RadarWorkspace({
+  initialRadarRun: currentRadarRun = initialRadarRun,
+}: {
+  initialRadarRun?: RadarRun;
+}) {
+  const [radarRun, setRadarRun] = useState<RadarRun>(currentRadarRun);
   const [selectedLens, setSelectedLens] = useState<Lens | 'all'>('all');
   const [selectedCode, setSelectedCode] = useState(
     radarRun.candidates[0]?.code ?? '',
