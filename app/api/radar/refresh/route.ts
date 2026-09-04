@@ -8,7 +8,9 @@ import type { RadarRun } from '@/lib/radar-run';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 1800;
+// Vercel validates every discovered route even though mobile mode blocks this
+// local-only endpoint. Keep the declaration within the Hobby deployment limit.
+export const maxDuration = 300;
 
 const projectRoot = process.cwd();
 const radarPath = path.join(
