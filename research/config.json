@@ -2,6 +2,8 @@
   "storage_dir": "data/research",
   "database_name": "watchlist.sqlite",
   "preview_dir": "public/data/radar/stocks",
+  "listing_path": "data/market/listing_latest.csv",
+  "manual_search_limit": 20,
   "job_timeout_ms": 1200000,
   "poll_interval_ms": 2500,
   "followup_stale_hours": 72,

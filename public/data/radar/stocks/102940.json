@@ -7,22 +7,22 @@
   "sector": "중견기업부",
   "industry": "기초 의약물질 제조업",
   "listing_date": "2009-04-07 00:00:00",
-  "run_id": "full_market_20260902_163423",
-  "generated_at": "2026-09-03T15:59:42.998623+09:00",
-  "collected_at": "2026-09-02T16:34:23+09:00",
+  "run_id": "full_market_20260904_224330",
+  "generated_at": "2026-09-04T22:49:37.442756+09:00",
+  "collected_at": "2026-09-04T22:43:30+09:00",
   "summary": {
-    "latest_price": 14700,
-    "price_as_of": "2026-09-02",
-    "market_cap_krw": 192431864100.0,
-    "change_1d_pct": -3.034300791556732,
+    "latest_price": 14850,
+    "price_as_of": "2026-09-04",
+    "market_cap_krw": 194395454550.0,
+    "change_1d_pct": 1.9917582417582347,
     "high_52w": null,
     "low_52w": null,
     "drawdown_52w_pct": null,
     "price_position_52w_pct": null
   },
   "valuation": {
-    "per": 5.5570980088870705,
-    "pbr": 0.2761153811455746,
+    "per": 5.613803090610408,
+    "pbr": 0.2789328850348151,
     "ev_ebitda": null,
     "ev_operating_profit": null,
     "ttm_roe_pct": 4.97,
@@ -34,22 +34,6 @@
     "ttm_operating_cash_flow": null
   },
   "prices": [
-    {
-      "date": "2026-06-01",
-      "open": 49300,
-      "high": 49650,
-      "low": 46700,
-      "close": 48700,
-      "volume": 39910
-    },
-    {
-      "date": "2026-06-02",
-      "open": 47200,
-      "high": 52500,
-      "low": 46650,
-      "close": 50600,
-      "volume": 35963
-    },
     {
       "date": "2026-06-04",
       "open": 50700,
@@ -553,6 +537,22 @@
       "low": 14640,
       "close": 14700,
       "volume": 67171
+    },
+    {
+      "date": "2026-09-03",
+      "open": 14890,
+      "high": 14920,
+      "low": 14500,
+      "close": 14560,
+      "volume": 58561
+    },
+    {
+      "date": "2026-09-04",
+      "open": 14700,
+      "high": 15050,
+      "low": 14600,
+      "close": 14850,
+      "volume": 64725
     }
   ],
   "quarters": [],
@@ -562,7 +562,7 @@
     "name": "코오롱생명과학",
     "market": "KOSDAQ",
     "sector": "중견기업부",
-    "market_cap_krw": 192431864100.0,
+    "market_cap_krw": 194395454550.0,
     "primary_lens": "dislocation",
     "matched_lenses": [
       "dislocation"
@@ -573,19 +573,10 @@
         "label": "Quality",
         "matched": false,
         "band": "review",
-        "evidence_count": 1,
-        "evidence_ratio_pct": 14,
+        "evidence_count": 0,
+        "evidence_ratio_pct": 0,
         "coverage_pct": 57,
-        "evidence": [
-          {
-            "key": "debt_ratio",
-            "label": "부채비율 기준 통과",
-            "value": 55.6,
-            "comparison": "<= 60%",
-            "period": "최근 보고서",
-            "source": "DART 재무"
-          }
-        ],
+        "evidence": [],
         "contradictions": [],
         "qualified": false
       },
@@ -602,7 +593,7 @@
             "key": "debt_improvement",
             "label": "부채비율 개선",
             "value": 57.7,
-            "comparison": ">= 30%p YoY",
+            "comparison": ">= 35%p YoY",
             "period": "20262Q",
             "source": "DART 재무"
           }
@@ -624,40 +615,40 @@
           {
             "key": "drawdown",
             "label": "52주 고점 대비 가격 하락",
-            "value": -79.8,
-            "comparison": "<= -35%",
+            "value": -79.6,
+            "comparison": "<= -40%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "extreme_drawdown",
             "label": "극단적 가격 하락 구간",
-            "value": -79.8,
-            "comparison": "<= -50%",
+            "value": -79.6,
+            "comparison": "<= -55%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "relative_weakness",
             "label": "6개월 Universe 대비 상대 부진",
-            "value": -57.5,
-            "comparison": "<= -30%p",
+            "value": -55.5,
+            "comparison": "<= -35%p",
             "period": "최근 121거래일",
             "source": "KRX 가격"
           },
           {
             "key": "price_position",
             "label": "120일 가격 범위 하단",
-            "value": 2.7,
-            "comparison": "<= 15%",
+            "value": 2.9,
+            "comparison": "<= 10%",
             "period": "최근 120거래일",
             "source": "KRX 가격"
           },
           {
             "key": "valuation_percentile",
-            "label": "PBR가 수집 Universe 하위 30%",
+            "label": "PBR가 수집 Universe 하위 7%",
             "value": 0.28,
-            "comparison": "<= 0.38",
+            "comparison": "<= 0.29",
             "period": "최근 수집값",
             "source": "KRX·DART"
           }
@@ -684,17 +675,17 @@
     },
     "contradictions": [],
     "warnings": [],
-    "as_of": "2026-09-02",
-    "latest_price_date": "2026-09-02",
+    "as_of": "2026-09-04",
+    "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
   "source_status": {
     "prices": {
       "status": "ok",
       "source": "네이버 금융 일별 시세",
-      "as_of": "2026-09-02",
+      "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-02T16:34:23+09:00"
+      "collected_at": "2026-09-04T22:43:30+09:00"
     },
     "financials": {
       "status": "partial",

@@ -11,6 +11,7 @@ import {
 import type { RadarCandidate, RadarRun } from '../radar-run';
 import type { StockDetail } from '../stock-detail';
 import type { ResearchRecord, WatchlistItem } from '../watchlist';
+import { ThesisStore } from './thesis-store.ts';
 
 export const researchConfig = JSON.parse(
   readFileSync(path.join(process.cwd(), 'research/config.json'), 'utf8'),
@@ -18,6 +19,8 @@ export const researchConfig = JSON.parse(
   storage_dir: string;
   database_name: string;
   preview_dir: string;
+  listing_path: string;
+  manual_search_limit: number;
   job_timeout_ms: number;
   poll_interval_ms: number;
 };
@@ -63,6 +66,7 @@ export class ResearchStore {
         name: String(row.name),
         added_at: String(row.added_at),
         active: row.active === 1,
+        thesis: new ThesisStore(this.db).summary(code),
         job: row.job_id
           ? {
               job_id: String(row.job_id),
@@ -111,8 +115,10 @@ export class ResearchStore {
     const record = this.get(code);
     if (!record?.item.active) return null;
     const baseline = this.reviewBaseline(code);
+    // Writing a thesis is not a change to the source-data review checkpoint.
+    const { thesis: _thesis, ...sourceItem } = record.item;
     const revision = createHash('sha256')
-      .update(JSON.stringify([record, baseline]))
+      .update(JSON.stringify([{ ...record, item: sourceItem }, baseline]))
       .digest('hex');
     return buildFollowup(record, baseline, revision, researchConfig);
   }
@@ -154,13 +160,16 @@ export class ResearchStore {
     candidate: RadarCandidate,
     radar: RadarRun,
     preview: StockDetail,
+    initialThesis?: { id: string; reason: string },
   ): { record: ResearchRecord; jobId: string | null } {
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const existing = this.get(candidate.code);
       if (existing?.item.active) {
+        if (initialThesis)
+          new ThesisStore(this.db).initial(candidate.code, initialThesis);
         this.db.exec('COMMIT');
-        return { record: existing, jobId: null };
+        return { record: this.get(candidate.code)!, jobId: null };
       }
       this.db
         .prepare(
@@ -176,6 +185,10 @@ export class ResearchStore {
           JSON.stringify(preview),
         );
       const jobId = this.enqueue(candidate.code, 'all');
+      // Explicit new writing is appended; request IDs deduplicate retries.
+      // Re-registration never overwrites an existing point.
+      if (initialThesis)
+        new ThesisStore(this.db).initial(candidate.code, initialThesis);
       this.db.exec('COMMIT');
       return { record: this.get(candidate.code)!, jobId };
     } catch (error) {

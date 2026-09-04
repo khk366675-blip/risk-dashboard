@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -11,9 +11,18 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ArrowUpRight, FileText, Info } from 'lucide-react';
+import { ArrowUpRight, FileText, Info, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   ChartContainer,
   ChartTooltip,
@@ -50,6 +59,20 @@ import {
   type EventCategory,
   type FilingScope,
 } from '@/lib/stock-research';
+import { thesisTitle, type InvestmentThesis } from '@/lib/investment-thesis';
+import {
+  evidenceRelations,
+  researchEvidenceConfig,
+  type EvidenceRelation,
+} from '@/lib/research-evidence';
+import { financialEvidenceStatusLabel } from '@/lib/research-financial-evidence';
+
+async function readJson(response: Response) {
+  const body = await response.json();
+  if (!response.ok)
+    throw new Error(body.error || '재무 관측 연결을 완료하지 못했습니다.');
+  return body;
+}
 
 export function Choices<T extends string>({
   value,
@@ -360,7 +383,7 @@ export function FinancialPanel({ stock }: { stock: StockDetail }) {
           />
         </div>
       </div>
-      <div className="flex shrink-0 items-end justify-between px-5 py-4">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3 px-5 py-4">
         <div>
           <p className="text-[11px] text-muted-foreground">
             {definition.label} · {latest?.label ?? '기간 미확인'}
@@ -372,11 +395,19 @@ export function FinancialPanel({ stock }: { stock: StockDetail }) {
             </span>
           </p>
         </div>
-        <p
-          className={`text-[10px] ${missing ? 'text-amber-700' : 'text-muted-foreground'}`}
-        >
-          {data.length}분기 중 {missing}분기 미확인
-        </p>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <p
+            className={`text-[10px] ${missing ? 'text-amber-700' : 'text-muted-foreground'}`}
+          >
+            {data.length}분기 중 {missing}분기 미확인
+          </p>
+          <FinancialObservationLinker
+            key={metric}
+            stock={stock}
+            metric={metric}
+            rows={rows}
+          />
+        </div>
       </div>
       {view === 'chart' ? (
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-3">
@@ -494,6 +525,253 @@ export function FinancialPanel({ stock }: { stock: StockDetail }) {
   );
 }
 
+function FinancialObservationLinker({
+  stock,
+  metric,
+  rows,
+}: {
+  stock: StockDetail;
+  metric: FinancialMetric;
+  rows: ReturnType<typeof quarterSeries>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [theses, setTheses] = useState<InvestmentThesis[]>([]);
+  const [thesisId, setThesisId] = useState('');
+  const selectable = rows.filter(
+    (row) => Number.isSafeInteger(row.year) && /^[1-4]Q$/.test(row.quarter),
+  );
+  const [period, setPeriod] = useState(() =>
+    selectable.length
+      ? `${selectable.at(-1)!.year}-${selectable.at(-1)!.quarter}`
+      : '',
+  );
+  const [relation, setRelation] = useState<EvidenceRelation>('context');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const abort = new AbortController();
+    void fetch(`/api/watchlist/${stock.code}/theses`, {
+      cache: 'no-store',
+      signal: abort.signal,
+    })
+      .then(readJson)
+      .then((body) => {
+        const active = (body.items as InvestmentThesis[]).filter(
+          (item) => !item.archived,
+        );
+        setTheses(active);
+        setThesisId((prior) =>
+          active.some((item) => item.id === prior)
+            ? prior
+            : (active[0]?.id ?? ''),
+        );
+        setError(null);
+      })
+      .catch((e) => {
+        if (!abort.signal.aborted) setError(e.message);
+      });
+    return () => abort.abort();
+  }, [open, stock.code]);
+  const selected = selectable.find(
+    (row) => `${row.year}-${row.quarter}` === period,
+  );
+  const definition = financialMetrics[metric];
+  const sourceStatus = stock.source_status.financials;
+  const save = async () => {
+    const thesis = theses.find((item) => item.id === thesisId);
+    if (!selected || !thesis || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await readJson(
+        await fetch(`/api/watchlist/${stock.code}/financial-evidence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            thesis_id: thesis.id,
+            thesis_revision: thesis.revision,
+            relation,
+            note,
+            metric,
+            year: selected.year,
+            quarter: selected.quarter,
+          }),
+        }),
+      );
+      setOpen(false);
+      setSaved(true);
+      setNote('');
+      setRelation('context');
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!selectable.length}
+        onClick={() => {
+          setOpen(true);
+          setError(null);
+        }}
+      >
+        <Link2 />
+        {saved ? '연결 완료' : '관측 연결'}
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!busy) setOpen(next);
+        }}
+      >
+        <DialogContent
+          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+          showCloseButton={!busy}
+        >
+          <DialogHeader>
+            <DialogTitle>재무 관측을 투자포인트에 연결</DialogTitle>
+            <DialogDescription>
+              현재 저장된 DART 재무 값의 정확한 기간과 출처 상태를 함께
+              기록합니다. 연결은 인과관계나 투자 논리의 입증을 뜻하지 않습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">
+                {definition.label} · {selected?.year ?? '—'}{' '}
+                {selected?.quarter ?? ''}
+              </p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">
+                {displayNumber(
+                  selected ? metricValue(selected, metric) : null,
+                  definition.unit,
+                )}
+              </p>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {selected?.statement_basis === 'CFS'
+                  ? '연결'
+                  : selected?.statement_basis === 'OFS'
+                    ? '별도'
+                    : '재무제표 기준 미확인'}{' '}
+                · 결측은 0이 아닌 미확인으로 저장
+              </p>
+              <p
+                className={`mt-1 text-[10px] ${sourceStatus?.status === 'ok' ? 'text-muted-foreground' : 'text-amber-800'}`}
+              >
+                출처 상태 ·{' '}
+                {financialEvidenceStatusLabel(sourceStatus?.status)}
+                {sourceStatus?.warning ? ` · ${sourceStatus.warning}` : ''}
+              </p>
+            </div>
+            <label className="block space-y-1.5 text-xs">
+              <span className="font-medium">재무 기간</span>
+              <select
+                aria-label="연결할 재무 기간"
+                value={period}
+                onChange={(event) => setPeriod(event.target.value)}
+                className="h-9 w-full rounded-md border bg-background px-2"
+              >
+                {[...selectable].reverse().map((row) => (
+                  <option
+                    key={`${row.year}-${row.quarter}`}
+                    value={`${row.year}-${row.quarter}`}
+                  >
+                    {row.year} {row.quarter}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {theses.length ? (
+              <>
+                <label className="block space-y-1.5 text-xs">
+                  <span className="font-medium">연결할 투자포인트</span>
+                  <select
+                    aria-label="연결할 투자포인트"
+                    value={thesisId}
+                    onChange={(event) => setThesisId(event.target.value)}
+                    className="h-9 w-full rounded-md border bg-background px-2"
+                  >
+                    {theses.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {thesisTitle(item.content)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <fieldset className="space-y-2">
+                  <legend className="text-xs font-medium">
+                    이 수치를 보는 관점
+                  </legend>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {Object.entries(evidenceRelations).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        size="sm"
+                        variant={relation === value ? 'default' : 'outline'}
+                        onClick={() => setRelation(value as EvidenceRelation)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </fieldset>
+                <label className="block space-y-1.5 text-xs">
+                  <span>
+                    내 메모{' '}
+                    <span className="text-muted-foreground">· 선택</span>
+                  </span>
+                  <Textarea
+                    value={note}
+                    maxLength={researchEvidenceConfig.max_note_chars}
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder="이 변화가 가설과 어떤 관련이 있는지 기록"
+                  />
+                  <span className="block text-right text-[10px] text-muted-foreground">
+                    {note.length}/{researchEvidenceConfig.max_note_chars}자
+                  </span>
+                </label>
+              </>
+            ) : (
+              <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                먼저 저장한 투자포인트가 필요합니다.
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="text-xs text-destructive">
+                {error}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setOpen(false)}
+            >
+              취소
+            </Button>
+            <Button
+              disabled={!selected || !thesisId || busy}
+              onClick={() => void save()}
+            >
+              {busy ? '연결 중…' : '선택한 관측 연결'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function PricePanel({ stock }: { stock: StockDetail }) {
   const [period, setPeriod] = useState<PricePeriod>('3m');
   const latest = stock.prices.at(-1);
@@ -573,9 +851,9 @@ export function EventsPanel({
       <div className="shrink-0 border-b p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">공시 살펴보기</h2>
+            <h2 className="text-sm font-semibold">공시</h2>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              결정·실적·주요 변경부터 · 선택하면 우측에 원문과 확인 사항
+              결정 · 실적 · 주요 변경
             </p>
           </div>
           <Choices

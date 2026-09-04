@@ -16,11 +16,31 @@ import {
   Star,
   RefreshCw,
   LoaderCircle,
+  ChevronDown,
+  BookOpen,
+  GitCompareArrows,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ResearchControls } from '@/components/research-stock-controller';
+import { EvidenceAiPanel } from '@/components/evidence-ai-panel';
+import { ThesisAiPanel } from '@/components/thesis-ai-panel';
+import { ThesisEvidenceReviewPanel } from '@/components/thesis-evidence-review-panel';
+import { FilingDocumentWorkspace } from '@/components/filing-document-workspace';
+import {
+  JournalWorkspace,
+  KpiWorkspace,
+  ResearchView,
+} from '@/components/research-system-workspaces';
+import {
+  ThesisWorkspace,
+  ThesisContextPanel,
+  discardThesisMessage,
+} from '@/components/thesis-workspace';
+import { useThesisNavigationGuard } from '@/components/use-thesis-navigation-guard';
+import { useDiscardConfirmation } from '@/components/use-discard-confirmation';
+import { thesisTitle, type InvestmentThesis } from '@/lib/investment-thesis';
 import { researchStateLabel } from '@/lib/watchlist';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -60,13 +80,34 @@ import {
   safeSourceUrl,
 } from '@/lib/stock-research';
 
-type DetailTab = 'overview' | 'financials' | 'price' | 'events';
-type EvidenceTab = 'radar' | 'sources' | 'filing';
+type DetailTab =
+  | 'thesis'
+  | 'research'
+  | 'kpis'
+  | 'journal'
+  | 'overview'
+  | 'financials'
+  | 'price'
+  | 'events'
+  | 'documents';
+type EvidenceTab =
+  | 'thesis'
+  | 'questions'
+  | 'thesis-evidence'
+  | 'radar'
+  | 'sources'
+  | 'filing'
+  | 'explain';
 const tabs = [
+  { value: 'thesis', label: '투자포인트' },
+  { value: 'research', label: 'Research View' },
+  { value: 'kpis', label: '사업 KPI' },
+  { value: 'journal', label: '리서치 로그' },
   { value: 'overview', label: '핵심 현황' },
   { value: 'financials', label: '재무 추이' },
   { value: 'price', label: '가격·거래량' },
   { value: 'events', label: '공시' },
+  { value: 'documents', label: '공시 원문' },
 ];
 
 export function StockDetailWorkspace({
@@ -109,23 +150,76 @@ function Workspace({
   initialEventsScope: 'focus' | 'all';
 }) {
   const [activeTab, setActiveTab] = useState<DetailTab>(
-    !research.item && (initialTab === 'financials' || initialTab === 'events')
+    !research.item &&
+      (initialTab === 'thesis' ||
+        initialTab === 'research' ||
+        initialTab === 'kpis' ||
+        initialTab === 'journal' ||
+        initialTab === 'financials' ||
+        initialTab === 'events')
       ? 'overview'
       : initialTab,
   );
   const [selectedLens, setSelectedLens] = useState<Lens>(
     stock.radar.primary_lens,
   );
-  const [evidenceTab, setEvidenceTab] = useState<EvidenceTab>('radar');
+  const [evidenceTab, setEvidenceTab] = useState<EvidenceTab>(
+    research.item ? 'thesis' : 'radar',
+  );
+  const [thesisDirty, setThesisDirty] = useState(false);
+  const [aiDraftDirty, setAiDraftDirty] = useState(false);
+  const [updatedThesis, setUpdatedThesis] = useState<InvestmentThesis | null>(
+    null,
+  );
+  const [selectedThesis, setSelectedThesis] = useState<InvestmentThesis | null>(
+    null,
+  );
+  const [thesisItems, setThesisItems] = useState<InvestmentThesis[] | null>(
+    null,
+  );
+  const { confirmDiscard, discardDialog } = useDiscardConfirmation();
+  useThesisNavigationGuard(thesisDirty || aiDraftDirty, confirmDiscard);
   const [selectedEvent, setSelectedEvent] = useState<StockEvent | null>(null);
   const [drawer, setDrawer] = useState<'candidates' | 'evidence' | null>(null);
   const [leftVisible, setLeftVisible] = useState(true);
-  const [rightVisible, setRightVisible] = useState(true);
+  const [rightVisible, setRightVisible] = useState(
+    !(['documents', 'research', 'kpis', 'journal'] as DetailTab[]).includes(
+      initialTab,
+    ),
+  );
+  const [documentSummaryOpen, setDocumentSummaryOpen] = useState(false);
+  const readingDocument = activeTab === 'documents';
+  const showStockSummary = !readingDocument || documentSummaryOpen;
   const warnings = [
     ...new Set([...(stock.warnings ?? []), ...stock.radar.warnings]),
   ];
   const candidateRail = (
-    <CandidateRail stock={stock} radarRun={radarRun} research={research} />
+    <CandidateRail
+      stock={stock}
+      radarRun={radarRun}
+      research={
+        thesisItems
+          ? {
+              ...research,
+              items: research.items.map((item) =>
+                item.code === stock.code
+                  ? {
+                      ...item,
+                      thesis: {
+                        count: thesisItems.filter((t) => !t.archived).length,
+                        title: thesisItems.find((t) => !t.archived)
+                          ? thesisTitle(
+                              thesisItems.find((t) => !t.archived)!.content,
+                            )
+                          : null,
+                      },
+                    }
+                  : item,
+              ),
+            }
+          : research
+      }
+    />
   );
   const evidenceRail = (
     <EvidenceRail
@@ -137,19 +231,35 @@ function Workspace({
       lens={selectedLens}
       onLensChange={setSelectedLens}
       event={selectedEvent}
+      registered={Boolean(research.item)}
+      selectedThesis={selectedThesis}
+      thesisDirty={thesisDirty}
+      onAiDraftDirty={setAiDraftDirty}
+      onThesisAdopt={(item) => {
+        setSelectedThesis(item);
+        setUpdatedThesis(item);
+        setThesisItems(
+          (prior) => prior?.map((p) => (p.id === item.id ? item : p)) ?? null,
+        );
+      }}
     />
   );
   return (
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      {discardDialog}
       {leftVisible && (
         <aside className="hidden w-[216px] shrink-0 flex-col border-r bg-sidebar xl:flex">
           {candidateRail}
         </aside>
       )}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="shrink-0 border-b bg-card px-4 pb-3 pt-3 sm:px-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+        <header
+          className={`shrink-0 border-b bg-card px-4 sm:px-6 ${readingDocument ? 'py-2' : 'py-3'}`}
+        >
+          <div
+            className={`flex items-center justify-between gap-2 ${showStockSummary ? 'mb-3' : ''}`}
+          >
+            <div className="flex min-w-0 items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -170,16 +280,51 @@ function Workspace({
                 <PanelLeft />
               </Button>
               <Link
-                href="/"
-                className="text-[11px] text-muted-foreground hover:text-primary"
+                href={stock.radar.discovery === 'manual' ? '/watchlist' : '/radar'}
+                className={`text-[11px] text-muted-foreground hover:text-primary ${readingDocument ? 'hidden sm:inline' : ''}`}
               >
-                Radar
+                {stock.radar.discovery === 'manual' ? '관심종목' : 'Radar'}
               </Link>
-              <span className="text-[10px] text-muted-foreground">
-                / 종목 검토
-              </span>
+              {readingDocument ? (
+                <h1
+                  className="truncate text-sm font-semibold"
+                  title={`${stock.name} · ${stock.code}`}
+                >
+                  {stock.name}
+                  <span className="ml-2 hidden text-[10px] font-normal text-muted-foreground sm:inline">
+                    {stock.code}
+                  </span>
+                </h1>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">
+                  / 종목 검토
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
+              {readingDocument && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-expanded={documentSummaryOpen}
+                  aria-controls="stock-summary"
+                  onClick={() => setDocumentSummaryOpen(!documentSummaryOpen)}
+                >
+                  종목 정보
+                  <ChevronDown
+                    className={`size-3.5 transition-transform ${documentSummaryOpen ? 'rotate-180' : ''}`}
+                  />
+                  {(research.error ||
+                    ['partial', 'error'].includes(
+                      research.item?.job?.state ?? '',
+                    )) && (
+                    <span
+                      className="size-1.5 rounded-full bg-amber-500"
+                      aria-label="자료 상태 확인 필요"
+                    />
+                  )}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -218,15 +363,32 @@ function Workspace({
               </Button>
             </div>
           </div>
-          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div
+            id="stock-summary"
+            hidden={!showStockSummary}
+            className={
+              showStockSummary
+                ? 'flex flex-wrap items-start justify-between gap-x-4 gap-y-2'
+                : 'hidden'
+            }
+          >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">
+                <p
+                  className="text-2xl font-semibold tracking-tight"
+                  role={readingDocument ? undefined : 'heading'}
+                  aria-level={readingDocument ? undefined : 1}
+                >
                   {stock.name}
-                </h1>
+                </p>
                 <Badge variant="secondary" className="text-[10px]">
                   {stock.code}
                 </Badge>
+                {stock.radar.discovery === 'manual' && (
+                  <Badge variant="outline" className="text-[9px]">
+                    직접 추가
+                  </Badge>
+                )}
                 {stock.radar.matched_lenses.map((lens) => (
                   <span
                     key={lens}
@@ -266,34 +428,131 @@ function Workspace({
             </div>
           </div>
         </header>
-        <ResearchToolbar research={research} />
+        {showStockSummary && (
+          <ResearchToolbar
+            research={{
+              ...research,
+              change: async (action, initial) => {
+                if (
+                  action === 'remove' &&
+                  thesisDirty &&
+                  !(await confirmDiscard(discardThesisMessage))
+                )
+                  return false;
+                return research.change(action, initial);
+              },
+            }}
+          />
+        )}
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as DetailTab)}
-          className="min-h-0 flex-1 gap-0"
+          onValueChange={async (value) => {
+            if (
+              value !== activeTab &&
+              thesisDirty &&
+              !(await confirmDiscard(discardThesisMessage))
+            )
+              return;
+            setActiveTab(value as DetailTab);
+            setRightVisible(
+              !(
+                ['documents', 'research', 'kpis', 'journal'] as DetailTab[]
+              ).includes(value as DetailTab),
+            );
+            if (value === 'thesis') setEvidenceTab('thesis');
+          }}
+          className="min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="shrink-0 overflow-x-auto border-b bg-card px-4 sm:px-6">
+          <div className="scrollbar-none shrink-0 overflow-x-auto border-b bg-card px-4 sm:px-6">
             <TabsList
               variant="line"
-              className="h-12 gap-4"
+              className={`${readingDocument ? 'h-10' : 'h-12'} gap-3`}
               aria-label="종목 상세 섹션"
             >
-              {tabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  disabled={
-                    !research.item &&
-                    (tab.value === 'financials' || tab.value === 'events')
-                  }
-                  className="px-1 text-xs data-active:text-primary after:bg-primary"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
+              {tabs
+                .filter(
+                  (tab) =>
+                    research.item ||
+                    ![
+                      'thesis',
+                      'research',
+                      'kpis',
+                      'journal',
+                      'documents',
+                    ].includes(tab.value),
+                )
+                .map((tab) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    disabled={
+                      !research.item &&
+                      (tab.value === 'financials' || tab.value === 'events')
+                    }
+                    className="px-1 text-xs data-active:text-primary after:bg-primary"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
             </TabsList>
           </div>
-          <div className="min-h-0 flex-1 overflow-hidden p-3 sm:p-4">
+          <div
+            className={`min-h-0 flex-1 overflow-hidden ${readingDocument ? 'p-2' : 'p-3 sm:p-4'}`}
+          >
+            <TabsContent
+              value="documents"
+              className="h-full min-h-0 overflow-hidden"
+            >
+              {research.item && <FilingDocumentWorkspace code={stock.code} />}
+            </TabsContent>
+            <TabsContent
+              value="thesis"
+              className="h-full min-h-0 overflow-hidden"
+            >
+              {research.item && (
+                <ThesisWorkspace
+                  key={
+                    updatedThesis
+                      ? `${updatedThesis.id}:${updatedThesis.revision}`
+                      : 'initial'
+                  }
+                  code={stock.code}
+                  onDirty={setThesisDirty}
+                  onSelect={setSelectedThesis}
+                  onItems={setThesisItems}
+                  confirmDiscard={confirmDiscard}
+                  preferredPointId={updatedThesis?.id}
+                  onRequestAi={() => {
+                    setEvidenceTab('questions');
+                    setRightVisible(true);
+                    if (window.innerWidth < 1024) setDrawer('evidence');
+                  }}
+                  onRequestEvidence={() => {
+                    setEvidenceTab('thesis');
+                    setRightVisible(true);
+                    if (window.innerWidth < 1024) setDrawer('evidence');
+                  }}
+                />
+              )}
+            </TabsContent>
+            <TabsContent
+              value="research"
+              className="h-full min-h-0 overflow-hidden"
+            >
+              {research.item && <ResearchView stock={stock} />}
+            </TabsContent>
+            <TabsContent
+              value="kpis"
+              className="h-full min-h-0 overflow-hidden"
+            >
+              {research.item && <KpiWorkspace code={stock.code} />}
+            </TabsContent>
+            <TabsContent
+              value="journal"
+              className="h-full min-h-0 overflow-hidden"
+            >
+              {research.item && <JournalWorkspace code={stock.code} />}
+            </TabsContent>
             <TabsContent value="overview" className="h-full overflow-y-auto">
               <OverviewPanel
                 stock={stock}
@@ -479,19 +738,37 @@ function CandidateRail({
     <>
       <div className="shrink-0 border-b p-4">
         <Link
-          href="/"
+          href={stock.radar.discovery === 'manual' ? '/watchlist' : '/radar'}
           className="flex items-center gap-2 py-2 text-xs font-semibold"
         >
           <ArrowLeft className="size-4" />
-          Radar로 돌아가기
+          {stock.radar.discovery === 'manual'
+            ? '관심종목으로 돌아가기'
+            : 'Radar로 돌아가기'}
         </Link>
-        <Link
-          href="/watchlist"
-          className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
-        >
-          <Star className="size-3.5" />
-          관심종목 전체 보기
-        </Link>
+        {stock.radar.discovery !== 'manual' && (
+          <Link
+            href="/watchlist"
+            className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
+          >
+            <Star className="size-3.5" />
+            관심종목 전체 보기
+          </Link>
+        )}
+        <div className="mt-2 flex gap-1">
+          <Link
+            href="/compare"
+            className="flex flex-1 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[9px] text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+          >
+            <GitCompareArrows className="size-3" /> 기업 비교
+          </Link>
+          <Link
+            href="/learning"
+            className="flex flex-1 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[9px] text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+          >
+            <BookOpen className="size-3" /> Learning
+          </Link>
+        </div>
         <div className="mt-3">
           <Choices
             label="종목 목록"
@@ -545,6 +822,12 @@ function CandidateRail({
               <span className="mt-1 block text-[9px] text-muted-foreground">
                 {candidate.code} · {candidate.market}
               </span>
+              {mode === 'watchlist' && (
+                <span className="mt-1 block truncate text-[9px] text-muted-foreground">
+                  {research.items.find((item) => item.code === candidate.code)
+                    ?.thesis?.title ?? '투자포인트 미작성'}
+                </span>
+              )}
             </span>
             <span className="text-[9px] font-medium text-muted-foreground">
               {candidate.matched_lenses
@@ -572,6 +855,11 @@ function EvidenceRail({
   lens,
   onLensChange,
   event,
+  registered,
+  selectedThesis,
+  thesisDirty,
+  onAiDraftDirty,
+  onThesisAdopt,
 }: {
   stock: StockDetail;
   radarRun: RadarRun;
@@ -581,6 +869,11 @@ function EvidenceRail({
   lens: Lens;
   onLensChange: (lens: Lens) => void;
   event: StockEvent | null;
+  registered: boolean;
+  selectedThesis: InvestmentThesis | null;
+  thesisDirty: boolean;
+  onAiDraftDirty: (dirty: boolean) => void;
+  onThesisAdopt: (item: InvestmentThesis) => void;
 }) {
   const result = stock.radar.lenses[lens];
   const hasCashFlowAdjustment = stock.quarters.some(
@@ -606,7 +899,16 @@ function EvidenceRail({
             value={tab}
             onChange={onTabChange}
             options={[
-              { value: 'radar', label: 'Radar 근거' },
+              ...(registered
+                ? [
+                    { value: 'thesis' as const, label: '내 검토' },
+                    { value: 'questions' as const, label: 'AI 질문' },
+                    { value: 'thesis-evidence' as const, label: 'AI 근거' },
+                  ]
+                : []),
+              ...(stock.radar.discovery === 'manual'
+                ? []
+                : [{ value: 'radar' as const, label: '발견 경로' }]),
               { value: 'sources', label: '지표·출처' },
               ...(event
                 ? [{ value: 'filing' as const, label: '선택 공시' }]
@@ -616,6 +918,44 @@ function EvidenceRail({
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        {tab === 'thesis' && <ThesisContextPanel item={selectedThesis} />}
+        {tab === 'questions' && (
+          <ThesisAiPanel
+            key={selectedThesis?.id ?? 'empty'}
+            code={stock.code}
+            item={selectedThesis}
+            dirty={thesisDirty}
+            onDraftDirty={onAiDraftDirty}
+            onAdopt={onThesisAdopt}
+          />
+        )}
+        {tab === 'thesis-evidence' && (
+          <ThesisEvidenceReviewPanel
+            key={selectedThesis?.id ?? 'empty'}
+            code={stock.code}
+            thesis={selectedThesis}
+          />
+        )}
+        {tab === 'explain' && (
+          <>
+            <div className="mb-4">
+              <Choices
+                label="해설할 Radar 렌즈"
+                value={lens}
+                onChange={onLensChange}
+                options={stock.radar.matched_lenses.map((value) => ({
+                  value,
+                  label: lensLabel[value],
+                }))}
+              />
+            </div>
+            <EvidenceAiPanel
+              key={`${stock.code}-${lens}-${stock.run_id}-${stock.generated_at}`}
+              code={stock.code}
+              lens={lens}
+            />
+          </>
+        )}
         {tab === 'radar' && (
           <>
             <Choices
@@ -682,7 +1022,8 @@ function EvidenceRail({
           <SourcesPanel stock={stock} radarRun={radarRun} />
         )}
         {tab === 'filing' && event && <FilingPanel event={event} />}
-        {warnings.length > 0 && (
+        {(['radar', 'sources', 'filing'] as EvidenceTab[]).includes(tab) &&
+          warnings.length > 0 && (
           <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
             <h3 className="text-[11px] font-semibold text-amber-900">
               자료 범위·주의
@@ -699,8 +1040,15 @@ function EvidenceRail({
         )}
       </div>
       <p className="shrink-0 border-t px-4 py-3 text-[9px] leading-4 text-muted-foreground">
-        Radar는 후보 발견 도구입니다. 이 화면은 원자료와 규칙 기반 확인 사항을
-        보여주며 AI 분석 결과가 아닙니다.
+        {tab === 'thesis'
+          ? '투자포인트와 검토 기록은 자료 갱신과 별도로 보존됩니다.'
+          : tab === 'questions'
+            ? '요청 버튼을 누를 때 선택한 투자포인트 저장본만 전송됩니다.'
+          : tab === 'thesis-evidence'
+            ? '선택한 투자포인트와 연결 자료 snapshot만 전송됩니다.'
+          : tab === 'explain'
+            ? 'AI 해석과 원자료를 구분해 확인하세요. 선정 근거 설명은 투자 판단이나 현재 조건 통과 여부를 뜻하지 않습니다.'
+            : 'Radar는 후보 발견 도구입니다. 원자료와 규칙 기반 확인 사항은 AI 분석 결과가 아닙니다.'}
       </p>
     </>
   );

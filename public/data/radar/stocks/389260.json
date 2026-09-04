@@ -7,22 +7,22 @@
   "sector": "우량기업부",
   "industry": "건물 건설업",
   "listing_date": "2022-05-16 00:00:00",
-  "run_id": "full_market_20260902_163423",
-  "generated_at": "2026-09-03T15:59:43.194914+09:00",
-  "collected_at": "2026-09-02T16:34:23+09:00",
+  "run_id": "full_market_20260904_224330",
+  "generated_at": "2026-09-04T22:49:37.639783+09:00",
+  "collected_at": "2026-09-04T22:43:30+09:00",
   "summary": {
-    "latest_price": 12700,
-    "price_as_of": "2026-09-02",
-    "market_cap_krw": 227537327500.0,
-    "change_1d_pct": -3.6418816388467334,
+    "latest_price": 13150,
+    "price_as_of": "2026-09-04",
+    "market_cap_krw": 235599673750.0,
+    "change_1d_pct": 3.7884767166535216,
     "high_52w": null,
     "low_52w": null,
     "drawdown_52w_pct": null,
     "price_position_52w_pct": null
   },
   "valuation": {
-    "per": 7.5124582448649315,
-    "pbr": 1.2234288953428716,
+    "per": 7.778647710234161,
+    "pbr": 1.266778738091241,
     "ev_ebitda": null,
     "ev_operating_profit": null,
     "ttm_roe_pct": 16.29,
@@ -34,22 +34,6 @@
     "ttm_operating_cash_flow": null
   },
   "prices": [
-    {
-      "date": "2026-06-01",
-      "open": 15270,
-      "high": 15610,
-      "low": 14200,
-      "close": 15080,
-      "volume": 94615
-    },
-    {
-      "date": "2026-06-02",
-      "open": 14400,
-      "high": 14940,
-      "low": 14070,
-      "close": 14110,
-      "volume": 86373
-    },
     {
       "date": "2026-06-04",
       "open": 13900,
@@ -552,7 +536,23 @@
       "high": 13180,
       "low": 12700,
       "close": 12700,
-      "volume": 62519
+      "volume": 63160
+    },
+    {
+      "date": "2026-09-03",
+      "open": 12900,
+      "high": 13100,
+      "low": 12490,
+      "close": 12670,
+      "volume": 64204
+    },
+    {
+      "date": "2026-09-04",
+      "open": 12750,
+      "high": 13150,
+      "low": 12750,
+      "close": 13150,
+      "volume": 54075
     }
   ],
   "quarters": [],
@@ -562,7 +562,7 @@
     "name": "대명에너지",
     "market": "KOSDAQ",
     "sector": "우량기업부",
-    "market_cap_krw": 227537327500.0,
+    "market_cap_krw": 235599673750.0,
     "primary_lens": "event",
     "matched_lenses": [
       "event"
@@ -573,8 +573,8 @@
         "label": "Quality",
         "matched": false,
         "band": "review",
-        "evidence_count": 4,
-        "evidence_ratio_pct": 57,
+        "evidence_count": 3,
+        "evidence_ratio_pct": 43,
         "coverage_pct": 86,
         "evidence": [
           {
@@ -594,18 +594,10 @@
             "source": "DART 재무"
           },
           {
-            "key": "cash_conversion",
-            "label": "영업이익의 현금 전환 양호",
-            "value": 1.34,
-            "comparison": ">= 1.3",
-            "period": "TTM",
-            "source": "DART 재무"
-          },
-          {
             "key": "positive_margin",
             "label": "TTM 영업이익률 기준 통과",
             "value": 20.2,
-            "comparison": ">= 12%",
+            "comparison": ">= 15%",
             "period": "TTM",
             "source": "DART 재무"
           }
@@ -630,32 +622,16 @@
         "label": "Dislocation",
         "matched": false,
         "band": "review",
-        "evidence_count": 3,
-        "evidence_ratio_pct": 60,
+        "evidence_count": 1,
+        "evidence_ratio_pct": 20,
         "coverage_pct": 100,
         "evidence": [
           {
             "key": "drawdown",
             "label": "52주 고점 대비 가격 하락",
-            "value": -54.0,
-            "comparison": "<= -35%",
+            "value": -52.4,
+            "comparison": "<= -40%",
             "period": "최근 252거래일",
-            "source": "KRX 가격"
-          },
-          {
-            "key": "extreme_drawdown",
-            "label": "극단적 가격 하락 구간",
-            "value": -54.0,
-            "comparison": "<= -50%",
-            "period": "최근 252거래일",
-            "source": "KRX 가격"
-          },
-          {
-            "key": "price_position",
-            "label": "120일 가격 범위 하단",
-            "value": 12.4,
-            "comparison": "<= 15%",
-            "period": "최근 120거래일",
             "source": "KRX 가격"
           }
         ],
@@ -666,9 +642,9 @@
         "lens": "event",
         "label": "Event",
         "matched": true,
-        "band": "strong",
-        "evidence_count": 2,
-        "evidence_ratio_pct": 67,
+        "band": "review",
+        "evidence_count": 1,
+        "evidence_ratio_pct": 33,
         "coverage_pct": 100,
         "evidence": [
           {
@@ -678,14 +654,6 @@
             "comparison": "DART 중요성 분류",
             "period": "20260902",
             "source": "DART 원문"
-          },
-          {
-            "key": "attention:dart:20260902900240",
-            "label": "공시 전후 거래대금 반응",
-            "value": 0.25,
-            "comparison": ">= 6.0배",
-            "period": "20260902",
-            "source": "KRX 가격"
           }
         ],
         "contradictions": [
@@ -695,24 +663,24 @@
       }
     },
     "plot": {
-      "evidence_density_pct": 67,
+      "evidence_density_pct": 33,
       "coverage_pct": 100
     },
     "contradictions": [
       "희석 가능성이 있는 자금조달 공시입니다. 조건과 사용처 확인이 필요합니다."
     ],
     "warnings": [],
-    "as_of": "2026-09-02",
-    "latest_price_date": "2026-09-02",
+    "as_of": "2026-09-04",
+    "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
   "source_status": {
     "prices": {
       "status": "ok",
       "source": "네이버 금융 일별 시세",
-      "as_of": "2026-09-02",
+      "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-02T16:34:23+09:00"
+      "collected_at": "2026-09-04T22:43:30+09:00"
     },
     "financials": {
       "status": "partial",

@@ -7,14 +7,14 @@
   "sector": "우량기업부",
   "industry": "사진장비 및 광학기기 제조업",
   "listing_date": "2003-01-24 00:00:00",
-  "run_id": "full_market_20260902_163423",
-  "generated_at": "2026-09-03T15:59:43.321731+09:00",
-  "collected_at": "2026-09-02T16:34:23+09:00",
+  "run_id": "full_market_20260904_224330",
+  "generated_at": "2026-09-04T22:49:37.578306+09:00",
+  "collected_at": "2026-09-04T22:43:30+09:00",
   "summary": {
     "latest_price": 7140,
-    "price_as_of": "2026-09-02",
+    "price_as_of": "2026-09-04",
     "market_cap_krw": 166827092460.0,
-    "change_1d_pct": -0.9708737864077666,
+    "change_1d_pct": 5.465288035450522,
     "high_52w": null,
     "low_52w": null,
     "drawdown_52w_pct": null,
@@ -34,22 +34,6 @@
     "ttm_operating_cash_flow": null
   },
   "prices": [
-    {
-      "date": "2026-06-01",
-      "open": 10680,
-      "high": 10900,
-      "low": 10070,
-      "close": 10260,
-      "volume": 425334
-    },
-    {
-      "date": "2026-06-02",
-      "open": 10250,
-      "high": 10500,
-      "low": 9560,
-      "close": 9840,
-      "volume": 508218
-    },
     {
       "date": "2026-06-04",
       "open": 9590,
@@ -552,7 +536,23 @@
       "high": 7480,
       "low": 7050,
       "close": 7140,
-      "volume": 400450
+      "volume": 402580
+    },
+    {
+      "date": "2026-09-03",
+      "open": 7150,
+      "high": 7230,
+      "low": 6750,
+      "close": 6770,
+      "volume": 347640
+    },
+    {
+      "date": "2026-09-04",
+      "open": 6870,
+      "high": 7180,
+      "low": 6800,
+      "close": 7140,
+      "volume": 219440
     }
   ],
   "quarters": [],
@@ -573,8 +573,8 @@
         "label": "Quality",
         "matched": false,
         "band": "review",
-        "evidence_count": 4,
-        "evidence_ratio_pct": 57,
+        "evidence_count": 3,
+        "evidence_ratio_pct": 43,
         "coverage_pct": 86,
         "evidence": [
           {
@@ -597,15 +597,7 @@
             "key": "roe",
             "label": "TTM ROE 기준 통과",
             "value": 22.8,
-            "comparison": ">= 18",
-            "period": "TTM",
-            "source": "DART 재무"
-          },
-          {
-            "key": "positive_margin",
-            "label": "TTM 영업이익률 기준 통과",
-            "value": 13.8,
-            "comparison": ">= 12%",
+            "comparison": ">= 20",
             "period": "TTM",
             "source": "DART 재무"
           }
@@ -626,7 +618,7 @@
             "key": "revenue_growth",
             "label": "분기 매출 성장",
             "value": 47.1,
-            "comparison": ">= 25% YoY",
+            "comparison": ">= 30% YoY",
             "period": "20262Q",
             "source": "DART 재무"
           },
@@ -642,7 +634,7 @@
             "key": "margin_improvement",
             "label": "영업이익률 개선",
             "value": 19.6,
-            "comparison": ">= +5%p YoY",
+            "comparison": ">= +6%p YoY",
             "period": "20262Q",
             "source": "DART 재무"
           },
@@ -650,7 +642,7 @@
             "key": "debt_improvement",
             "label": "부채비율 개선",
             "value": 80.7,
-            "comparison": ">= 30%p YoY",
+            "comparison": ">= 35%p YoY",
             "period": "20262Q",
             "source": "DART 재무"
           }
@@ -671,7 +663,7 @@
             "key": "drawdown",
             "label": "52주 고점 대비 가격 하락",
             "value": -82.4,
-            "comparison": "<= -35%",
+            "comparison": "<= -40%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
@@ -679,15 +671,15 @@
             "key": "extreme_drawdown",
             "label": "극단적 가격 하락 구간",
             "value": -82.4,
-            "comparison": "<= -50%",
+            "comparison": "<= -55%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "relative_weakness",
             "label": "6개월 Universe 대비 상대 부진",
-            "value": -38.9,
-            "comparison": "<= -30%p",
+            "value": -35.3,
+            "comparison": "<= -35%p",
             "period": "최근 121거래일",
             "source": "KRX 가격"
           }
@@ -714,17 +706,17 @@
     },
     "contradictions": [],
     "warnings": [],
-    "as_of": "2026-09-02",
-    "latest_price_date": "2026-09-02",
+    "as_of": "2026-09-04",
+    "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
   "source_status": {
     "prices": {
       "status": "ok",
       "source": "네이버 금융 일별 시세",
-      "as_of": "2026-09-02",
+      "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-02T16:34:23+09:00"
+      "collected_at": "2026-09-04T22:43:30+09:00"
     },
     "financials": {
       "status": "partial",

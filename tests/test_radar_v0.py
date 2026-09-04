@@ -5,6 +5,7 @@ from pathlib import Path
 from scripts.radar_v0 import (
     StockSnapshot,
     dislocation_lens,
+    event_lens,
     finite_number,
     load_rules,
     percentile_cutoff,
@@ -84,6 +85,54 @@ class RadarV0Tests(unittest.TestCase):
         )
         self.assertFalse(result["matched"])
         self.assertTrue(any("오래되어" in item for item in result["contradictions"]))
+
+    def test_dislocation_uses_the_configured_valuation_percentile_label(self):
+        end = date(2026, 9, 4)
+        prices = []
+        for index in range(252):
+            day = end - timedelta(days=251 - index)
+            close = 100 if index < 131 else 40
+            prices.append({"date": day.isoformat(), "open": close, "high": 100, "low": 40, "close": close, "volume": 100_000})
+        result = dislocation_lens(
+            snapshot(valuation={"per": 1, "pbr": 1, "ev_ebitda": 1}, prices=prices),
+            RULES,
+            {"per": 2, "pbr": 2, "ev_ebitda": 2},
+            0,
+            True,
+            end,
+        )
+        valuation = next(item for item in result["evidence"] if item["key"] == "valuation_percentile")
+        self.assertIn(f"하위 {RULES['dislocation']['valuation_percentile_max_pct']}%", valuation["label"])
+
+    def test_recent_dilution_event_does_not_turn_weak_attention_into_evidence(self):
+        as_of = date(2026, 9, 4)
+        prices = [
+            {
+                "date": (as_of - timedelta(days=20 - index)).isoformat(),
+                "open": 100,
+                "high": 100,
+                "low": 100,
+                "close": 100,
+                "volume": 100_000,
+            }
+            for index in range(21)
+        ]
+        result = event_lens(
+            snapshot(prices=prices),
+            RULES,
+            [
+                {
+                    "id": "dart:20260904000001",
+                    "code": "000001",
+                    "date": as_of.isoformat(),
+                    "url": "https://dart.fss.or.kr/example",
+                    "metadata": {"importance_hint": "dilution_risk"},
+                }
+            ],
+            as_of,
+        )
+        self.assertTrue(result["matched"])
+        self.assertEqual([item["key"] for item in result["evidence"]], ["filing:dart:20260904000001"])
 
 
 if __name__ == "__main__":

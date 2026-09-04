@@ -7,22 +7,22 @@
   "sector": "우량기업부",
   "industry": "의약품 제조업",
   "listing_date": "2006-12-19 00:00:00",
-  "run_id": "full_market_20260902_163423",
-  "generated_at": "2026-09-03T15:59:42.986087+09:00",
-  "collected_at": "2026-09-02T16:34:23+09:00",
+  "run_id": "full_market_20260904_224330",
+  "generated_at": "2026-09-04T22:49:37.426167+09:00",
+  "collected_at": "2026-09-04T22:43:30+09:00",
   "summary": {
-    "latest_price": 24500,
-    "price_as_of": "2026-09-02",
-    "market_cap_krw": 310165394000.0,
-    "change_1d_pct": -6.488549618320616,
+    "latest_price": 23800,
+    "price_as_of": "2026-09-04",
+    "market_cap_krw": 301303525600.0,
+    "change_1d_pct": 0.634249471458781,
     "high_52w": null,
     "low_52w": null,
     "drawdown_52w_pct": null,
     "price_position_52w_pct": null
   },
   "valuation": {
-    "per": 5.215911116506203,
-    "pbr": 0.28499186279270033,
+    "per": 5.066885084606026,
+    "pbr": 0.2768492381414803,
     "ev_ebitda": null,
     "ev_operating_profit": null,
     "ttm_roe_pct": 5.46,
@@ -34,22 +34,6 @@
     "ttm_operating_cash_flow": null
   },
   "prices": [
-    {
-      "date": "2026-06-01",
-      "open": 30550,
-      "high": 31500,
-      "low": 29350,
-      "close": 29900,
-      "volume": 99797
-    },
-    {
-      "date": "2026-06-02",
-      "open": 29100,
-      "high": 29250,
-      "low": 27550,
-      "close": 28500,
-      "volume": 109643
-    },
     {
       "date": "2026-06-04",
       "open": 28850,
@@ -553,6 +537,22 @@
       "low": 24250,
       "close": 24500,
       "volume": 83990
+    },
+    {
+      "date": "2026-09-03",
+      "open": 24400,
+      "high": 24750,
+      "low": 23300,
+      "close": 23650,
+      "volume": 77286
+    },
+    {
+      "date": "2026-09-04",
+      "open": 24150,
+      "high": 24200,
+      "low": 23500,
+      "close": 23800,
+      "volume": 36503
     }
   ],
   "quarters": [],
@@ -562,7 +562,7 @@
     "name": "휴온스글로벌",
     "market": "KOSDAQ",
     "sector": "우량기업부",
-    "market_cap_krw": 310165394000.0,
+    "market_cap_krw": 301303525600.0,
     "primary_lens": "dislocation",
     "matched_lenses": [
       "dislocation"
@@ -597,7 +597,7 @@
             "key": "cash_conversion",
             "label": "영업이익의 현금 전환 양호",
             "value": 2.13,
-            "comparison": ">= 1.3",
+            "comparison": ">= 1.5",
             "period": "TTM",
             "source": "DART 재무"
           },
@@ -605,7 +605,7 @@
             "key": "debt_ratio",
             "label": "부채비율 기준 통과",
             "value": 41.4,
-            "comparison": "<= 60%",
+            "comparison": "<= 50%",
             "period": "최근 보고서",
             "source": "DART 재무"
           }
@@ -637,40 +637,40 @@
           {
             "key": "drawdown",
             "label": "52주 고점 대비 가격 하락",
-            "value": -68.1,
-            "comparison": "<= -35%",
+            "value": -69.0,
+            "comparison": "<= -40%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "extreme_drawdown",
             "label": "극단적 가격 하락 구간",
-            "value": -68.1,
-            "comparison": "<= -50%",
+            "value": -69.0,
+            "comparison": "<= -55%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "relative_weakness",
             "label": "6개월 Universe 대비 상대 부진",
-            "value": -48.1,
-            "comparison": "<= -30%p",
+            "value": -50.0,
+            "comparison": "<= -35%p",
             "period": "최근 121거래일",
             "source": "KRX 가격"
           },
           {
             "key": "price_position",
             "label": "120일 가격 범위 하단",
-            "value": 7.8,
-            "comparison": "<= 15%",
+            "value": 6.6,
+            "comparison": "<= 10%",
             "period": "최근 120거래일",
             "source": "KRX 가격"
           },
           {
             "key": "valuation_percentile",
-            "label": "PBR가 수집 Universe 하위 30%",
+            "label": "PBR가 수집 Universe 하위 7%",
             "value": 0.28,
-            "comparison": "<= 0.38",
+            "comparison": "<= 0.29",
             "period": "최근 수집값",
             "source": "KRX·DART"
           }
@@ -697,17 +697,17 @@
     },
     "contradictions": [],
     "warnings": [],
-    "as_of": "2026-09-02",
-    "latest_price_date": "2026-09-02",
+    "as_of": "2026-09-04",
+    "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
   "source_status": {
     "prices": {
       "status": "ok",
       "source": "네이버 금융 일별 시세",
-      "as_of": "2026-09-02",
+      "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-02T16:34:23+09:00"
+      "collected_at": "2026-09-04T22:43:30+09:00"
     },
     "financials": {
       "status": "partial",

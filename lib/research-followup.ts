@@ -197,6 +197,7 @@ export function buildFollowup(
       stock.prices.length > 0);
   return {
     ...item,
+    discovery: stock.radar?.discovery ?? 'radar',
     revision,
     checked_at: baseline?.checked_at ?? null,
     firstSections,
@@ -234,21 +235,35 @@ export function buildFollowup(
           : null,
       sinceReview,
       baseline: baseline?.price ?? null,
-      series: prices
-        .slice(-config.followup_price_points)
-        .map((p) => ({
-          date: p.date,
-          close: numberOrNull(p.close),
-          volume: numberOrNull(p.volume),
-        })),
+      series: prices.slice(-config.followup_price_points).map((p) => ({
+        date: p.date,
+        close: numberOrNull(p.close),
+        volume: numberOrNull(p.volume),
+      })),
     },
   };
 }
 export type FollowupItem = ReturnType<typeof buildFollowup>;
 
-export type StockDetailTab = 'overview' | 'financials' | 'price' | 'events';
+export type StockDetailTab =
+  | 'thesis'
+  | 'research'
+  | 'kpis'
+  | 'journal'
+  | 'overview'
+  | 'financials'
+  | 'price'
+  | 'events'
+  | 'documents';
 export function parseDetailTab(value: unknown): StockDetailTab {
-  return value === 'financials' || value === 'price' || value === 'events'
+  return value === 'thesis' ||
+    value === 'research' ||
+    value === 'kpis' ||
+    value === 'journal' ||
+    value === 'financials' ||
+    value === 'price' ||
+    value === 'events' ||
+    value === 'documents'
     ? value
     : 'overview';
 }

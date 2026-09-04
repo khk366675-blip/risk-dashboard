@@ -511,7 +511,14 @@ def dislocation_lens(
         if value is not None and value > 0 and cutoff is not None:
             available += 1 / 3
             if valuation_item is None and value <= cutoff:
-                valuation_item = evidence("valuation_percentile", f"{label}가 수집 Universe 하위 30%", safe_round(value, 2), f"<= {safe_round(cutoff, 2)}", "최근 수집값", "KRX·DART")
+                valuation_item = evidence(
+                    "valuation_percentile",
+                    f"{label}가 수집 Universe 하위 {config['valuation_percentile_max_pct']}%",
+                    safe_round(value, 2),
+                    f"<= {safe_round(cutoff, 2)}",
+                    "최근 수집값",
+                    "KRX·DART",
+                )
     if valuation_item:
         items.append(valuation_item)
     if not support:
@@ -644,7 +651,10 @@ def event_lens(
                 "DART 원문",
             )
         )
-        if item.get("_attention_multiple") is not None:
+        if (
+            item.get("_attention_multiple") is not None
+            and item["_attention_multiple"] >= config["attention_traded_value_multiple"]
+        ):
             items.append(
                 evidence(
                     f"attention:{item.get('id', '')}",

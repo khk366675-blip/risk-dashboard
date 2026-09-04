@@ -1,0 +1,37 @@
+{
+  "max_update_note_chars": 1000,
+  "max_status_note_chars": 1200,
+  "max_update_items": 300,
+  "source_searches": [
+    {
+      "key": "naver_news",
+      "label": "네이버 뉴스",
+      "description": "종목명 뉴스 검색",
+      "template": "https://search.naver.com/search.naver?where=news&query={name}"
+    },
+    {
+      "key": "google_news",
+      "label": "Google 뉴스",
+      "description": "국내외 기사 후보 검색",
+      "template": "https://news.google.com/search?q={name}&hl=ko&gl=KR&ceid=KR:ko"
+    },
+    {
+      "key": "company_ir",
+      "label": "기업 IR",
+      "description": "회사 IR·실적 자료 검색",
+      "template": "https://www.google.com/search?q={name}+IR+실적자료"
+    },
+    {
+      "key": "broker_report",
+      "label": "증권사 리포트",
+      "description": "공개 리포트 후보 검색",
+      "template": "https://www.google.com/search?q={name}+증권사+리포트"
+    },
+    {
+      "key": "dart",
+      "label": "DART",
+      "description": "전자공시 원문 검색",
+      "template": "https://dart.fss.or.kr/dsab007/main.do?autoSearch=Y&option=corp&textCrpNM={name}"
+    }
+  ]
+}

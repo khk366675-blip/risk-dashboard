@@ -55,3 +55,8 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Private local backup/recovery bundles (default location is outside this repo)
+/backups/
+/recovered/
+backup-*.zip

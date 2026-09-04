@@ -52,10 +52,13 @@ export async function generateMetadata({
 export default async function StockPage({ params, searchParams }: PageProps) {
   const { code } = await params;
   const query = await searchParams;
-  const initialTab = parseDetailTab(query.tab);
   const initialEventsScope = query.scope === 'all' ? 'all' : 'focus';
   const data = await loadStock(code);
   if (!data) notFound();
+  const initialTab =
+    query.tab === undefined && data.record
+      ? 'thesis'
+      : parseDetailTab(query.tab);
   return (
     <ResearchStockController
       key={`${code}-${initialTab}-${initialEventsScope}`}

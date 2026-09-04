@@ -1,13 +1,14 @@
 import { spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { RadarRun } from '../radar-run';
-import type { StockDetail } from '../stock-detail';
+import type { Lens, RadarCandidate, RadarRun } from '../radar-run.ts';
+import type { StockDetail } from '../stock-detail.ts';
+import type { ListedStock } from './listing-store.ts';
 import {
   localStore,
   researchConfig,
   researchDirectory,
-} from './research-store';
+} from './research-store.ts';
 
 export async function readRadar(): Promise<RadarRun> {
   return JSON.parse(
@@ -57,6 +58,129 @@ export async function readPreview(
     }
   }
   return null;
+}
+
+const lensNames: Record<Lens, string> = {
+  quality: 'Quality',
+  improvement: 'Improvement',
+  dislocation: 'Dislocation',
+  event: 'Event',
+};
+
+export function manualCandidate(
+  listing: ListedStock,
+  radar: RadarRun,
+): RadarCandidate {
+  const emptyLens = (lens: Lens): RadarCandidate['lenses'][Lens] => ({
+    lens,
+    label: lensNames[lens],
+    matched: false,
+    qualified: false,
+    band: 'review',
+    evidence_count: 0,
+    evidence_ratio_pct: 0,
+    coverage_pct: 0,
+    evidence: [],
+    contradictions: [],
+  });
+  const lenses: RadarCandidate['lenses'] = {
+    quality: emptyLens('quality'),
+    improvement: emptyLens('improvement'),
+    dislocation: emptyLens('dislocation'),
+    event: emptyLens('event'),
+  };
+  return {
+    discovery: 'manual',
+    code: listing.code,
+    name: listing.name,
+    market: listing.market,
+    sector: listing.sector,
+    market_cap_krw: listing.market_cap_krw,
+    // Kept only for backward-compatible storage; manual entries expose no lens.
+    primary_lens: 'quality',
+    matched_lenses: [],
+    lenses,
+    plot: { evidence_density_pct: 0, coverage_pct: 0 },
+    contradictions: [],
+    warnings: [
+      '사용자가 직접 추가한 관심종목입니다. Radar 선정 근거가 없습니다.',
+    ],
+    as_of: radar.as_of,
+    latest_price_date: radar.as_of,
+    freshness: radar.status === 'ok' ? 'latest' : 'stale',
+  };
+}
+
+export function manualPreview(
+  listing: ListedStock,
+  radar: RadarRun,
+): StockDetail {
+  const generatedAt = new Date().toISOString();
+  const candidate = manualCandidate(listing, radar);
+  return {
+    schema_version: 'stock-preview.v1',
+    data_level: 'preview',
+    code: listing.code,
+    name: listing.name,
+    market: listing.market,
+    sector: listing.sector,
+    industry: listing.industry,
+    listing_date: listing.listing_date,
+    generated_at: generatedAt,
+    collected_at: radar.generated_at,
+    warnings: [...candidate.warnings],
+    summary: {
+      latest_price: listing.latest_price,
+      change_1d_pct: null,
+      price_as_of: radar.as_of,
+      market_cap_krw: listing.market_cap_krw,
+      high_52w: null,
+      low_52w: null,
+      drawdown_52w_pct: null,
+      price_position_52w_pct: null,
+    },
+    valuation: {
+      per: null,
+      pbr: null,
+      ev_ebitda: null,
+      ev_operating_profit: null,
+      ttm_roe_pct: null,
+      debt_ratio_pct: null,
+      interest_coverage: null,
+      ttm_revenue: null,
+      ttm_operating_profit: null,
+      ttm_net_income: null,
+      ttm_operating_cash_flow: null,
+    },
+    quarters: [],
+    prices: [],
+    events: [],
+    radar: candidate,
+    source_status: {
+      prices: {
+        status: 'partial',
+        source: 'KRX 상장종목 스냅샷',
+        as_of: radar.as_of,
+        collected_at: radar.generated_at,
+        record_count: listing.latest_price === null ? 0 : 1,
+        warning: '등록 후 가격 이력을 수집하고 있습니다.',
+      },
+      financials: {
+        status: 'missing',
+        source: 'DART 단일회사 전체 재무제표',
+        as_of: null,
+        collected_at: null,
+        warning: '등록 후 재무자료를 수집하고 있습니다.',
+      },
+      dart_events: {
+        status: 'missing',
+        source: 'DART 회사별 공시검색',
+        as_of: null,
+        collected_at: null,
+        warning: '등록 후 공시를 수집하고 있습니다.',
+      },
+    },
+  };
 }
 export async function startResearchWorker(code: string, jobId: string) {
   const python =

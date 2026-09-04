@@ -1,0 +1,25 @@
+{
+  "directory": "../value-invest-dashboard-backups",
+  "format_version": 1,
+  "sqlite_timeout_seconds": 5,
+  "snapshot_timeout_seconds": 30,
+  "max_files": 10000,
+  "max_file_bytes": 134217728,
+  "max_total_bytes": 536870912,
+  "context_paths": [
+    "research/config.json",
+    "research/schema.sql",
+    "research/thesis-config.json",
+    "research/thesis-ai.json",
+    "research/ai-request-policy.json",
+    "research/documents-config.json",
+    "research/evidence-config.json",
+    "research/workbench-config.json",
+    "research/thesis-evidence-ai.json",
+    "research/backup-config.json",
+    "radar/rules.v1.json",
+    "public/data/radar",
+    "public/data/markets",
+    "public/data/stocks"
+  ]
+}

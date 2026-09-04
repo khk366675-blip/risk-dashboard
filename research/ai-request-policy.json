@@ -1,0 +1,5 @@
+{
+  "max_requests_per_hour": 12,
+  "window_ms": 3600000,
+  "lease_ms": 90000
+}

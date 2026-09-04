@@ -1,0 +1,11 @@
+{
+  "max_active_points": 10,
+  "max_body_chars": 4000,
+  "max_title_chars": 80,
+  "max_optional_chars": 1000,
+  "max_timing_chars": 120,
+  "max_url_chars": 2000,
+  "max_checks": 12,
+  "max_check_chars": 300,
+  "max_request_bytes": 64000
+}

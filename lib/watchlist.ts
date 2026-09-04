@@ -10,6 +10,7 @@ export type WatchlistItem = {
   name: string;
   added_at: string;
   active: boolean;
+  thesis?: { count: number; title: string | null };
   job: {
     job_id: string;
     state: ResearchState;

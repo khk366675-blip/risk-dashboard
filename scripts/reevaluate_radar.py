@@ -62,6 +62,12 @@ def main() -> int:
         }
     )
     payload["summary"]["evaluated_universe_count"] = payload["summary"]["standard_eligible_count"]
+    covered_financials = previous.get("source_status", {}).get("dart_financials", {}).get("covered_count")
+    if isinstance(covered_financials, int):
+        payload["summary"]["financial_coverage_count"] = covered_financials
+    for key in ("price_target_count", "fresh_price_count"):
+        if key in previous.get("summary", {}):
+            payload["summary"][key] = previous["summary"][key]
     export_radar_previews(payload)
     write_json(config.INTERNAL_RADAR_PATH, payload)
     write_json(config.PUBLIC_RADAR_PATH, payload)

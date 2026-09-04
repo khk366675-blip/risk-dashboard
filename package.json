@@ -6,13 +6,29 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "predev": "node scripts/local-data.mjs auto",
     "dev": "next dev --webpack",
+    "backup": "node scripts/local-data.mjs create",
+    "backup:list": "node scripts/local-data.mjs list",
+    "backup:verify": "node scripts/local-data.mjs verify",
+    "backup:restore": "node scripts/local-data.mjs restore",
+    "mobile:publish": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/publish-mobile-snapshot.ts",
+    "mobile:pull": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/pull-mobile-notes.ts",
+    "mobile:sync": "npm run mobile:pull && npm run mobile:publish",
     "build": "next build",
     "start": "next start",
     "lint": "oxlint",
     "format": "oxfmt",
     "test:radar": "python -m unittest discover -s tests -p test_*.py",
-    "test:stock": "node --experimental-strip-types --test tests/stock-research.test.mjs tests/watchlist-store.test.mjs tests/research-followup.test.mjs"
+    "test:evidence": "node --experimental-strip-types --test tests/evidence-explanation.test.mjs",
+    "test:thesis": "node --experimental-strip-types --test tests/investment-thesis.test.mjs",
+    "test:thesis-ai": "node --experimental-strip-types --test tests/thesis-ai.test.mjs",
+    "test:documents": "node --experimental-strip-types --test tests/document-store.test.mjs tests/research-evidence.test.mjs tests/financial-evidence.test.mjs tests/manual-evidence.test.mjs",
+    "test:workbench": "node --experimental-strip-types --test tests/research-workbench.test.mjs tests/thesis-evidence-ai.test.mjs",
+    "test:research-system": "node --experimental-strip-types --test tests/research-system.test.mjs",
+    "test:mobile": "node --experimental-strip-types --test tests/mobile-dashboard.test.mjs",
+    "test:stock": "node --experimental-strip-types --test tests/stock-research.test.mjs tests/watchlist-store.test.mjs tests/research-followup.test.mjs tests/manual-watchlist.test.mjs",
+    "eval:ai-models": "node --experimental-strip-types scripts/evaluate-ai-models.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

@@ -55,12 +55,12 @@ High-risk findings cannot be offset by positive points from another signal.
 
 ## Evidence lenses
 
-The initial thresholds live in `radar/rules.v1.json`. They are deliberately permissive and versioned so distribution changes can be attributed to one rule change at a time.
+The active thresholds live in `radar/rules.v1.json`. They are versioned so distribution changes can be attributed to a specific rule change. Rule v7 widens the common evaluation universe while making each evidence lens more selective.
 
 ### v0 common eligibility
 
-- Market cap at least KRW 50 billion
-- 20-day median traded value at least KRW 500 million
+- Market cap at least KRW 30 billion
+- 20-day median traded value at least KRW 200 million
 - At least 120 price observations (60 for Event)
 - Financial snapshot no older than 180 days
 - Preferred shares, SPACs, and REITs are separate universes
@@ -76,7 +76,7 @@ Question: Is the business demonstrating durable economic quality?
 - Balance-sheet resilience
 - Dilution and capital-allocation history
 
-v0 requires at least three available evidence signals and one cash/profit-persistence core signal. Initial numeric checks include ROE >= 5%, interest coverage >= 2x, cash conversion >= 0.7, and debt ratio <= 200%.
+Rule v7 requires all three cash/profit-persistence core signals and at least six of seven evidence signals with at least 85% coverage. Numeric checks include ROE >= 20%, interest coverage >= 10x, cash conversion >= 1.5, debt ratio <= 50%, and operating margin >= 15%.
 
 ### 2. Improvement
 
@@ -88,7 +88,7 @@ Question: Are the fundamentals changing in a measurable and sustained way?
 - Working-capital normalization
 - Balance-sheet repair
 
-v0 requires at least two evidence signals, including one business-direction signal. The initial anchors are revenue YoY >= 5%, operating profit YoY >= 10%, loss narrowing >= 20%, or margin improvement >= 1 percentage point.
+Rule v7 requires three business-direction signals, one financial-support signal, at least four total evidence signals, and 67% coverage. Numeric anchors are revenue YoY >= 30%, operating profit YoY >= 75%, loss narrowing >= 70%, margin improvement >= 6 percentage points, current operating margin >= 7%, and debt-ratio improvement >= 35 percentage points.
 
 ### 3. Dislocation
 
@@ -101,7 +101,7 @@ Question: Is price behavior unusually weak relative to observable business evide
 
 Dislocation never means “cheap.” It means the relationship deserves inspection.
 
-v0 requires at least two price/valuation signals and one business-support signal. Initial anchors are a 52-week drawdown of at least 20%, six-month relative underperformance of 15 percentage points, a 120-day price position in the bottom 35%, or a valid valuation multiple in the bottom 30% of the comparison set.
+Rule v7 requires the full five-item package plus business support and at least 90% coverage: a 52-week drawdown of at least 40%, an extreme drawdown of at least 55%, six-month relative underperformance of 35 percentage points, a 120-day price position in the bottom 10%, and a positive valuation multiple in the bottom 7% of the comparison set. Stale price data cannot match.
 
 ### 4. Event
 
@@ -114,7 +114,7 @@ Question: Has a primary-source event changed the research case?
 
 News titles may help locate a source but cannot be the sole evidence for a strong event signal.
 
-v0 only surfaces verified DART items within 120 days whose importance has been structured as a material contract, buyback, or dilution risk. Unknown filing titles remain visible in source diagnostics but do not create candidates.
+Rule v7 only surfaces verified DART items within 120 days whose importance has been structured as a material contract, buyback, or dilution risk. A dilution-risk item must be no older than two days. Other items must be no older than seven days and have at least KRW 75 billion of event-day traded value at eight times the prior baseline. A traded-value observation below the threshold is never counted as supporting evidence. Unknown filing titles remain visible in source diagnostics but do not create candidates.
 
 ## First seed diagnostic — 2026-09-02
 

@@ -1,0 +1,8 @@
+{
+  "max_links_per_thesis": 50,
+  "max_note_chars": 500,
+  "max_manual_title_chars": 160,
+  "max_manual_source_chars": 100,
+  "max_manual_body_chars": 6000,
+  "max_manual_url_chars": 2000
+}

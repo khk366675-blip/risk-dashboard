@@ -7,14 +7,14 @@
   "sector": "중견기업부",
   "industry": "통신 및 방송 장비 제조업",
   "listing_date": "2019-12-26 00:00:00",
-  "run_id": "full_market_20260902_163423",
-  "generated_at": "2026-09-03T15:59:42.972439+09:00",
-  "collected_at": "2026-09-02T16:34:23+09:00",
+  "run_id": "full_market_20260904_224330",
+  "generated_at": "2026-09-04T22:49:37.512679+09:00",
+  "collected_at": "2026-09-04T22:43:30+09:00",
   "summary": {
-    "latest_price": 1914,
-    "price_as_of": "2026-09-02",
-    "market_cap_krw": 54633803598.0,
-    "change_1d_pct": -4.252126063031514,
+    "latest_price": 1911,
+    "price_as_of": "2026-09-04",
+    "market_cap_krw": 54548170677.0,
+    "change_1d_pct": 3.297297297297308,
     "high_52w": null,
     "low_52w": null,
     "drawdown_52w_pct": null,
@@ -22,7 +22,7 @@
   },
   "valuation": {
     "per": null,
-    "pbr": 1.3907402236647048,
+    "pbr": 1.3885603800539452,
     "ev_ebitda": null,
     "ev_operating_profit": null,
     "ttm_roe_pct": -4.79,
@@ -34,22 +34,6 @@
     "ttm_operating_cash_flow": null
   },
   "prices": [
-    {
-      "date": "2026-06-01",
-      "open": 6052,
-      "high": 6072,
-      "low": 5452,
-      "close": 5542,
-      "volume": 1996596
-    },
-    {
-      "date": "2026-06-02",
-      "open": 5502,
-      "high": 5502,
-      "low": 5002,
-      "close": 5202,
-      "volume": 1168075
-    },
     {
       "date": "2026-06-04",
       "open": 5082,
@@ -552,7 +536,23 @@
       "high": 1999,
       "low": 1899,
       "close": 1914,
-      "volume": 587289
+      "volume": 597156
+    },
+    {
+      "date": "2026-09-03",
+      "open": 1914,
+      "high": 1936,
+      "low": 1849,
+      "close": 1850,
+      "volume": 585561
+    },
+    {
+      "date": "2026-09-04",
+      "open": 1852,
+      "high": 1926,
+      "low": 1852,
+      "close": 1911,
+      "volume": 440445
     }
   ],
   "quarters": [],
@@ -562,7 +562,7 @@
     "name": "한국첨단소재",
     "market": "KOSDAQ",
     "sector": "중견기업부",
-    "market_cap_krw": 54633803598.0,
+    "market_cap_krw": 54548170677.0,
     "primary_lens": "event",
     "matched_lenses": [
       "event"
@@ -593,7 +593,7 @@
             "key": "margin_improvement",
             "label": "영업이익률 개선",
             "value": 32.4,
-            "comparison": ">= +5%p YoY",
+            "comparison": ">= +6%p YoY",
             "period": "20262Q",
             "source": "DART 재무"
           }
@@ -614,7 +614,7 @@
             "key": "drawdown",
             "label": "52주 고점 대비 가격 하락",
             "value": -81.1,
-            "comparison": "<= -35%",
+            "comparison": "<= -40%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
@@ -622,15 +622,15 @@
             "key": "extreme_drawdown",
             "label": "극단적 가격 하락 구간",
             "value": -81.1,
-            "comparison": "<= -50%",
+            "comparison": "<= -55%",
             "period": "최근 252거래일",
             "source": "KRX 가격"
           },
           {
             "key": "price_position",
             "label": "120일 가격 범위 하단",
-            "value": 0.2,
-            "comparison": "<= 15%",
+            "value": 0.8,
+            "comparison": "<= 10%",
             "period": "최근 120거래일",
             "source": "KRX 가격"
           }
@@ -645,8 +645,8 @@
         "label": "Event",
         "matched": true,
         "band": "strong",
-        "evidence_count": 4,
-        "evidence_ratio_pct": 100,
+        "evidence_count": 2,
+        "evidence_ratio_pct": 67,
         "coverage_pct": 100,
         "evidence": [
           {
@@ -658,28 +658,12 @@
             "source": "DART 원문"
           },
           {
-            "key": "attention:dart:20260902000259",
-            "label": "공시 전후 거래대금 반응",
-            "value": 0.2,
-            "comparison": ">= 6.0배",
-            "period": "20260902",
-            "source": "KRX 가격"
-          },
-          {
             "key": "filing:dart:20260902000256",
             "label": "희석 가능 자금조달 공시",
             "value": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902000256",
             "comparison": "DART 중요성 분류",
             "period": "20260902",
             "source": "DART 원문"
-          },
-          {
-            "key": "attention:dart:20260902000256",
-            "label": "공시 전후 거래대금 반응",
-            "value": 0.2,
-            "comparison": ">= 6.0배",
-            "period": "20260902",
-            "source": "KRX 가격"
           }
         ],
         "contradictions": [
@@ -690,24 +674,24 @@
       }
     },
     "plot": {
-      "evidence_density_pct": 100,
+      "evidence_density_pct": 67,
       "coverage_pct": 100
     },
     "contradictions": [
       "희석 가능성이 있는 자금조달 공시입니다. 조건과 사용처 확인이 필요합니다."
     ],
     "warnings": [],
-    "as_of": "2026-09-02",
-    "latest_price_date": "2026-09-02",
+    "as_of": "2026-09-04",
+    "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
   "source_status": {
     "prices": {
       "status": "ok",
       "source": "네이버 금융 일별 시세",
-      "as_of": "2026-09-02",
+      "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-02T16:34:23+09:00"
+      "collected_at": "2026-09-04T22:43:30+09:00"
     },
     "financials": {
       "status": "partial",

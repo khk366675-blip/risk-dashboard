@@ -25,6 +25,7 @@ export type LensResult = {
 };
 
 export type RadarCandidate = {
+  discovery?: 'radar' | 'manual';
   code: string;
   name: string;
   market: string;

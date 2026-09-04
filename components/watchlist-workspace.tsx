@@ -189,11 +189,16 @@ export function WatchlistWorkspace({
         </Link>
         <nav className="mt-8 space-y-2">
           <Link
-            href="/"
+            href="/markets"
             className="flex items-center gap-2 rounded-xl p-3 text-xs text-muted-foreground"
           >
-            <Radar className="size-4" />
-            Radar
+            Markets
+          </Link>
+          <Link
+            href="/radar"
+            className="flex items-center gap-2 rounded-xl p-3 text-xs text-muted-foreground"
+          >
+            <Radar className="size-4" /> Radar
           </Link>
           <Link
             href="/watchlist"
@@ -202,12 +207,6 @@ export function WatchlistWorkspace({
           >
             <Star className="size-4" />
             관심종목 <span className="ml-auto">{items.length}</span>
-          </Link>
-          <Link
-            href="/markets"
-            className="block rounded-xl p-3 text-xs text-muted-foreground"
-          >
-            Markets
           </Link>
         </nav>
         <p className="mt-8 text-[11px] leading-6 text-muted-foreground">
@@ -219,10 +218,10 @@ export function WatchlistWorkspace({
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="shrink-0 border-b bg-card px-6 py-5">
           <Link
-            href="/"
+            href="/markets"
             className="mb-3 block text-xs text-muted-foreground md:hidden"
           >
-            ← Radar로
+            ← Markets로
           </Link>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -319,7 +318,7 @@ export function WatchlistWorkspace({
                   <Star className="size-6" />
                 </span>
                 <h2 className="mt-5 text-lg font-semibold">
-                  검토할 종목을 골라보세요
+                  관심종목 선택
                 </h2>
                 <p className="mt-3 text-xs leading-6 text-muted-foreground">
                   Radar 후보에서 관심종목으로 등록하면
@@ -329,10 +328,10 @@ export function WatchlistWorkspace({
                   다음 Radar에서 빠져도 이곳에는 남습니다.
                 </p>
                 <Link
-                  href="/"
+                  href="/radar"
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-xs font-medium text-primary-foreground"
                 >
-                  Radar 후보 살펴보기 <ArrowUpRight className="size-4" />
+                  Radar 열기 <ArrowUpRight className="size-4" />
                 </Link>
               </div>
             </div>
@@ -360,6 +359,13 @@ export function WatchlistWorkspace({
                     <span className="mt-1 block text-[10px] text-muted-foreground">
                       {item.code}
                     </span>
+                    <Link
+                      href={`/stocks/${item.code}?tab=thesis`}
+                      className="mt-2 block truncate text-[11px] text-primary"
+                      title={item.thesis?.title ?? undefined}
+                    >
+                      {item.thesis?.title ?? '투자포인트 작성하기'}
+                    </Link>
                     <span className="mt-2 block text-[10px] text-muted-foreground">
                       {checkedDate(item.checked_at)}
                     </span>
