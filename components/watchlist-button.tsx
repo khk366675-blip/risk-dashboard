@@ -71,6 +71,7 @@ export function WatchlistButton({ code }: { code: string }) {
       )}
       {registerOpen && (
         <ThesisRegistrationDialog
+          stockLabel={code}
           open
           onClose={() => setRegisterOpen(false)}
           onRegister={register}

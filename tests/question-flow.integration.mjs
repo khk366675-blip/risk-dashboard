@@ -216,8 +216,49 @@ try {
     1,
     'adoption and answers make no additional AI request',
   );
+  // Exercise the actual watchlist DELETE route too: it used to run a second,
+  // inconsistent origin check before the shared thesis guard.
+  const watchlistPath = `/api/watchlist/${candidate.code}`;
+  for (const host of ['localhost', '127.0.0.1']) {
+    const url = `http://${host}:${port}`;
+    const forbidden = await fetch(url + watchlistPath, {
+      method: 'DELETE',
+      headers: { Origin: 'https://unrelated.example' },
+    });
+    assert.equal(forbidden.status, 403);
+    const before = await (await fetch(url + watchlistPath)).json();
+    assert.equal(before.record.item.active, true);
+    const removed = await fetch(url + watchlistPath, {
+      method: 'DELETE',
+      headers: { Origin: url },
+    });
+    const result = await removed.json();
+    assert.equal(removed.status, 200, JSON.stringify(result));
+    assert.equal(result.record.item.active, false);
+    assert.equal(result.items.length, 0);
+    assert.deepEqual(result.record.stock, before.record.stock);
+    owner = new ResearchStore(directory);
+    const retained = owner.db
+      .prepare('SELECT content_json FROM investment_theses WHERE id=?')
+      .get(point.id);
+    assert.deepEqual(JSON.parse(retained.content_json), content);
+    assert.ok(
+      owner.db
+        .prepare('SELECT id FROM research_manual_evidence WHERE id=?')
+        .get(source.body.item.id),
+    );
+    owner.register(candidate, radar, stock);
+    owner.close();
+    owner = null;
+    const invalidReview = await write(watchlistPath + '/review', {}, host);
+    assert.equal(
+      invalidReview.status,
+      400,
+      'review must reach input validation, not reject local origin',
+    );
+  }
   console.log(
-    'PASS: both local hosts adopt, retry deduplicates, manual evidence + answer persist, stale/cross-origin writes rejected; no real AI calls.',
+    'PASS: both local hosts adopt and unregister, retry deduplicates, evidence + answers survive unregister, stale/cross-origin writes rejected; no real AI calls.',
   );
 } finally {
   owner?.close();

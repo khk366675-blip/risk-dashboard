@@ -1,4 +1,5 @@
 'use client';
+import { useActionConfirmation } from '@/components/use-action-confirmation';
 import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
@@ -94,6 +95,15 @@ export default function RadarWorkspace({
     filteredCandidates[0];
   const refreshRadar = async () => {
     if (radarRefreshing) return;
+    if (
+      !(await confirmAction({
+        title: 'Radar를 실행할까요?',
+        description:
+          '전체 시장의 최신 자료를 수집해 후보를 다시 계산합니다. 시간이 오래 걸릴 수 있습니다. 관심종목과 작성한 리서치는 유지됩니다.',
+        actionLabel: 'Radar 실행',
+      }))
+    )
+      return;
     setRadarRefreshing(true);
     setRefreshMessage(null);
     setRefreshError(null);
@@ -137,8 +147,10 @@ export default function RadarWorkspace({
     }
   };
 
+  const { confirmAction, confirmationDialog } = useActionConfirmation();
   return (
     <RadarRunContext.Provider value={radarRun}>
+      {confirmationDialog}
       <div className="h-screen overflow-hidden bg-background text-foreground">
         <div className="mx-auto grid h-full max-w-[1800px] grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)]">
           <GlobalSidebar

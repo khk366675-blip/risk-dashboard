@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isLocalDashboardRequest } from '../lib/server/local-request.ts';
+import { validateMutation } from '../lib/server/research-service.ts';
 
 const req = (
   host,
@@ -15,6 +16,31 @@ const req = (
       ...extras,
     },
   });
+
+test('watchlist mutation guard shares the loopback Host validation used by thesis adoption', () => {
+  for (const host of ['localhost:3000', '127.0.0.1:3000', '[::1]:3000']) {
+    assert.doesNotThrow(() => validateMutation(req(host, `http://${host}`)));
+  }
+  for (const origin of [
+    null,
+    'null',
+    'http://evil.test',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+  ]) {
+    assert.throws(() => validateMutation(req('localhost:3000', origin)));
+  }
+  assert.throws(() =>
+    validateMutation(req('evil.test:3000', 'http://evil.test:3000')),
+  );
+  assert.throws(() =>
+    validateMutation(
+      req('localhost:3000', 'http://localhost:3000', {
+        'sec-fetch-site': 'cross-site',
+      }),
+    ),
+  );
+});
 
 test('local browser Host survives Next bind-host normalization, including IPv6', () => {
   for (const host of ['localhost:3000', '127.0.0.1:3000', '[::1]:3000']) {

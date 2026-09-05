@@ -60,9 +60,12 @@ export function ManualWatchlistDialog({
     setSelected(null);
     try {
       const result = await json(
-        await fetch(`/api/stocks/search?q=${encodeURIComponent(query.trim())}`, {
-          cache: 'no-store',
-        }),
+        await fetch(
+          `/api/stocks/search?q=${encodeURIComponent(query.trim())}`,
+          {
+            cache: 'no-store',
+          },
+        ),
       );
       setItems(result.items as SearchItem[]);
       setSearched(true);
@@ -106,12 +109,13 @@ export function ManualWatchlistDialog({
     }
   };
 
-  const alreadyAdded = selected
-    ? existingCodes.includes(selected.code)
-    : false;
+  const alreadyAdded = selected ? existingCodes.includes(selected.code) : false;
 
   return (
-    <Dialog open={open} onOpenChange={(value) => !saving && onOpenChange(value)}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => !saving && onOpenChange(value)}
+    >
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[560px]">
         <DialogHeader className="border-b px-6 py-5">
           <DialogTitle>종목 직접 추가</DialogTitle>
@@ -131,8 +135,16 @@ export function ManualWatchlistDialog({
               maxLength={80}
               disabled={searching || saving}
             />
-            <Button type="submit" variant="outline" disabled={!query.trim() || searching || saving}>
-              {searching ? <LoaderCircle className="animate-spin" /> : <Search />}
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={!query.trim() || searching || saving}
+            >
+              {searching ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                <Search />
+              )}
               검색
             </Button>
           </form>
@@ -204,18 +216,32 @@ export function ManualWatchlistDialog({
             </p>
           )}
           <p className="text-[9px] leading-4 text-muted-foreground">
-            추가 후 가격·재무·DART 공시 수집이 시작됩니다. Radar에 선정된 것으로
-            표시하지 않으며 수집 실패와 누락은 그대로 표시합니다.
+            {selected
+              ? `${selected.name} (${selected.code})을(를) 등록할까요? `
+              : ''}
+            등록하면 가격·재무·DART 공시 수집을 요청합니다. 시간이 걸릴 수
+            있으며 AI는 실행하지 않습니다.
           </p>
         </div>
 
         <DialogFooter className="border-t px-6 py-4">
-          <Button variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            disabled={saving}
+            onClick={() => onOpenChange(false)}
+          >
             취소
           </Button>
-          <Button disabled={!selected || alreadyAdded || saving} onClick={() => void add()}>
+          <Button
+            disabled={!selected || alreadyAdded || saving}
+            onClick={() => void add()}
+          >
             {saving && <LoaderCircle className="animate-spin" />}
-            {alreadyAdded ? '이미 관심종목' : saving ? '추가 중' : '관심종목 추가'}
+            {alreadyAdded
+              ? '이미 관심종목'
+              : saving
+                ? '추가 중'
+                : '관심종목 추가'}
           </Button>
         </DialogFooter>
       </DialogContent>

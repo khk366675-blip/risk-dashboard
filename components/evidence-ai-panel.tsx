@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useActionConfirmation } from '@/components/use-action-confirmation';
 import type { Lens } from '@/lib/radar-run';
 import type {
   EvidencePacket,
@@ -23,6 +24,7 @@ type PanelData = {
   result: ExplanationResult | null;
 };
 export function EvidenceAiPanel({ code, lens }: { code: string; lens: Lens }) {
+  const { confirmAction, confirmationDialog } = useActionConfirmation();
   const [data, setData] = useState<PanelData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,6 +62,14 @@ export function EvidenceAiPanel({ code, lens }: { code: string; lens: Lens }) {
   }
   async function generate() {
     if (!data || busy) return;
+    if (
+      !(await confirmAction({
+        title: 'AI 해설을 요청할까요?',
+        description: `공개 종목 정보와 선택한 Radar 선정 근거를 OpenAI에 전송합니다. API 사용 비용이 발생할 수 있습니다.\n모델: ${data.model}\n관심종목 목록과 개인 검토 기록은 보내지 않습니다.`,
+        actionLabel: '확인하고 AI 요청',
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -100,6 +110,7 @@ export function EvidenceAiPanel({ code, lens }: { code: string; lens: Lens }) {
   const { packet, result } = data;
   return (
     <div className="space-y-4">
+      {confirmationDialog}
       <section className="rounded-2xl border border-primary/15 bg-primary/[0.035] p-4">
         <div className="flex items-center gap-2 text-primary">
           <Sparkles className="size-4" />

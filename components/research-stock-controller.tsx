@@ -7,6 +7,7 @@ import type { ResearchRecord, WatchlistItem } from '@/lib/watchlist';
 import { StockDetailWorkspace } from '@/components/stock-detail-workspace';
 import type { StockDetailTab } from '@/lib/research-followup';
 import { ThesisRegistrationDialog } from '@/components/thesis-registration-dialog';
+import { useActionConfirmation } from '@/components/use-action-confirmation';
 
 export type ResearchControls = {
   item: WatchlistItem | null;
@@ -37,6 +38,7 @@ export function ResearchStockController({
   initialEventsScope?: 'focus' | 'all';
 }) {
   const router = useRouter();
+  const { confirmAction, confirmationDialog } = useActionConfirmation();
   const [record, setRecord] = useState(initialRecord);
   const [items, setItems] = useState(initialItems);
   const [busy, setBusy] = useState(false);
@@ -95,6 +97,24 @@ export function ResearchStockController({
       setRegisterOpen(true);
       return false;
     }
+    if (
+      action !== 'register' &&
+      !(await confirmAction({
+        title:
+          action === 'remove'
+            ? `${stock.name} 관심 해제할까요?`
+            : `${stock.name} 자료를 갱신할까요?`,
+        description:
+          action === 'remove'
+            ? '관심종목 목록에서 제외합니다. 작성한 투자포인트·답변·연결 자료는 보존되며, 다시 등록하면 이어서 볼 수 있습니다.'
+            : action === 'retry'
+              ? '실패하거나 누락된 자료 수집을 다시 요청합니다. 작성한 투자포인트와 메모는 유지됩니다.'
+              : '가격·재무·공시 자료를 다시 수집합니다. 시간이 걸릴 수 있으며 작성한 투자포인트와 메모는 유지됩니다.',
+        actionLabel: action === 'remove' ? '관심 해제' : '자료 갱신',
+        destructive: action === 'remove',
+      }))
+    )
+      return false;
     setBusy(true);
     setError(null);
     try {
@@ -136,6 +156,7 @@ export function ResearchStockController({
   };
   return (
     <>
+      {confirmationDialog}
       <StockDetailWorkspace
         initialTab={initialTab}
         initialEventsScope={initialEventsScope}
@@ -151,6 +172,7 @@ export function ResearchStockController({
       />
       {registerOpen && (
         <ThesisRegistrationDialog
+          stockLabel={`${stock.name} (${stock.code})`}
           open
           onClose={() => setRegisterOpen(false)}
           busy={busy}

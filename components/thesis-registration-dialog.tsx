@@ -19,12 +19,14 @@ export function ThesisRegistrationDialog({
   onRegister,
   busy,
   error,
+  stockLabel,
 }: {
   open: boolean;
   onClose: () => void;
   onRegister: (reason: string, id: string) => Promise<boolean>;
   busy: boolean;
   error: string | null;
+  stockLabel?: string;
 }) {
   const [reason, setReason] = useState('');
   const [requestId] = useState(() => crypto.randomUUID());
@@ -46,11 +48,11 @@ export function ThesisRegistrationDialog({
       >
         <DialogContent showCloseButton={!busy}>
           <DialogHeader>
-            <DialogTitle>관심종목으로 검토하기</DialogTitle>
+            <DialogTitle>관심종목에 등록할까요?</DialogTitle>
             <DialogDescription>
-              관심을 갖게 된 이유를 적으면 투자포인트로 함께 저장합니다. 지금은
-              비워두어도 됩니다. 재등록할 때 적은 이유는 기존 글을 유지하고
-              추가합니다.
+              {stockLabel ? `${stockLabel}을(를) ` : '이 종목을 '}관심종목에
+              등록하고 가격·재무·DART 공시 수집을 요청합니다. 시간이 걸릴 수
+              있습니다. AI는 실행하지 않습니다.
             </DialogDescription>
           </DialogHeader>
           <label className="space-y-2 text-xs" htmlFor="registration-reason">
@@ -58,6 +60,9 @@ export function ThesisRegistrationDialog({
               관심을 갖게 된 이유{' '}
               <span className="text-muted-foreground">· 선택</span>
             </span>
+            <p className="text-muted-foreground">
+              작성하면 투자포인트로 함께 저장합니다. 기존 글은 유지합니다.
+            </p>
             <Textarea
               id="registration-reason"
               value={reason}

@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { completePreviewPrices } from './price-history.ts';
+import { isLocalDashboardRequest } from './local-request.ts';
 import type { Lens, RadarCandidate, RadarRun } from '../radar-run.ts';
 import type { StockDetail } from '../stock-detail.ts';
 import type { ListedStock } from './listing-store.ts';
@@ -272,10 +273,6 @@ export async function startResearchWorker(code: string, jobId: string) {
   }
 }
 export function validateMutation(request: Request) {
-  const origin = request.headers.get('origin');
-  if (
-    (origin && origin !== new URL(request.url).origin) ||
-    request.headers.get('sec-fetch-site') === 'cross-site'
-  )
+  if (!isLocalDashboardRequest(request, true))
     throw new Error('다른 사이트에서의 변경 요청은 허용하지 않습니다.');
 }

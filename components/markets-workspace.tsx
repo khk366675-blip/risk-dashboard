@@ -1,4 +1,5 @@
 'use client';
+import { useActionConfirmation } from '@/components/use-action-confirmation';
 import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
@@ -172,6 +173,15 @@ export function MarketsWorkspace({
 
   const refreshMarkets = async () => {
     if (refreshing) return;
+    if (
+      !(await confirmAction({
+        title: '시장 데이터를 갱신할까요?',
+        description:
+          'Markets의 지수·환율·금리 등 최신 데이터를 수집합니다. 개인 리서치는 변경하지 않습니다.',
+        actionLabel: '데이터 갱신',
+      }))
+    )
+      return;
     setRefreshing(true);
     setRefreshError(null);
     setRefreshMessage(null);
@@ -211,8 +221,10 @@ export function MarketsWorkspace({
     }
   };
 
+  const { confirmAction, confirmationDialog } = useActionConfirmation();
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
+      {confirmationDialog}
       <div className="mx-auto grid h-full max-w-[1800px] grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)]">
         <MarketsNav snapshot={snapshot} radarCount={radarCount} />
         <main className="flex min-w-0 flex-col overflow-hidden">
@@ -340,12 +352,27 @@ function MarketsNav({
 }
 
 function MobileSyncControls() {
+  const { confirmAction, confirmationDialog } = useActionConfirmation();
   const [running, setRunning] = useState<'publish' | 'sync' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   const run = async (action: 'publish' | 'sync') => {
     if (running) return;
+    if (
+      !(await confirmAction({
+        title:
+          action === 'publish'
+            ? '모바일에 게시할까요?'
+            : '모바일과 동기화할까요?',
+        description:
+          action === 'publish'
+            ? '현재 Radar·시장 데이터·관심종목·리서치·Learning 기록을 원격 저장소에 전송해 모바일 게시본을 갱신합니다.'
+            : '모바일 메모를 이 PC에 가져온 뒤, 최신 로컬 자료를 원격 저장소에 게시합니다.',
+        actionLabel: action === 'publish' ? '게시' : '동기화',
+      }))
+    )
+      return;
     setRunning(action);
     setMessage(null);
     setFailed(false);
@@ -386,6 +413,7 @@ function MobileSyncControls() {
 
   return (
     <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-3">
+      {confirmationDialog}
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold text-blue-950">모바일</p>
         <span className="text-[9px] text-blue-700/60">Supabase</span>
