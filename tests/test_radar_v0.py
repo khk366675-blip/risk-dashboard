@@ -10,6 +10,8 @@ from scripts.radar_v0 import (
     load_rules,
     percentile_cutoff,
     quality_lens,
+    comparable_quarters,
+    improvement_lens,
     ratio_as_pct,
 )
 
@@ -33,6 +35,16 @@ def snapshot(*, valuation=None, quarters=None, prices=None) -> StockSnapshot:
 
 
 class RadarV0Tests(unittest.TestCase):
+    def test_missing_and_mixed_periods_are_not_comparable(self):
+        quarters = [{'year':2025,'quarter':quarter,'statement_basis':'CFS'} for quarter in ('1Q','2Q','3Q','4Q')]
+        self.assertTrue(comparable_quarters(quarters))
+        self.assertFalse(comparable_quarters([quarters[0], quarters[2]]))
+        self.assertFalse(comparable_quarters([quarters[0], {**quarters[1], 'statement_basis':'OFS'}]))
+        self.assertFalse(comparable_quarters([{**quarters[0], 'statement_basis':None}]))
+        result = improvement_lens(snapshot(quarters=[quarters[0], {'year':2026,'quarter':'1Q','statement_basis':'OFS'}]), RULES)
+        self.assertFalse(result['matched'])
+        self.assertTrue(result['contradictions'])
+
     def test_non_finite_values_are_missing(self):
         self.assertIsNone(finite_number(float("nan")))
         self.assertIsNone(finite_number(float("inf")))
@@ -47,7 +59,7 @@ class RadarV0Tests(unittest.TestCase):
 
     def test_quality_matches_with_core_and_supporting_evidence(self):
         quarters = [
-            {"year": 2025, "quarter": quarter, "op": 10, "rev": 100, "ocf": 10, "equity": 100, "debt": 80}
+            {"year": 2025, "quarter": quarter, "statement_basis": "CFS", "op": 10, "rev": 100, "ocf": 10, "equity": 100, "debt": 80}
             for quarter in ("1Q", "2Q", "3Q", "4Q")
         ]
         result = quality_lens(

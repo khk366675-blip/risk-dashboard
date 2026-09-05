@@ -19,6 +19,9 @@ export type ThesisEvidenceReviewItem = {
   period: string | null;
   source_name: string;
   source_status: string;
+  collected_at?: string | null;
+  excerpt_truncated?: boolean;
+  original_chars?: number;
 };
 
 export type ThesisEvidenceAiInput = {
@@ -33,6 +36,7 @@ export type ThesisEvidenceAiInput = {
     existing_questions: string[];
   };
   evidence: ThesisEvidenceReviewItem[];
+  focus?: { id: string; question: string; answer: string; unresolved: string };
 };
 
 export type ThesisEvidenceFinding = {
@@ -102,6 +106,7 @@ export function validateEvidenceReview(
     input.point.body,
     input.point.timing,
     input.point.weakens,
+    input.focus?.question ?? '',
   ];
   const inputNumbers = new Set(
     (JSON.stringify(input).match(/\d+(?:[.,]\d+)*/g) ?? []).map(String),

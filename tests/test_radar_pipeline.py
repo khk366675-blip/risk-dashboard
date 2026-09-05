@@ -10,6 +10,17 @@ from radar_pipeline.market import load_price_checkpoint, save_price_checkpoint
 
 
 class RadarPipelineTests(unittest.TestCase):
+    def test_missing_or_mixed_basis_prior_quarter_does_not_become_zero_cashflow(self):
+        periods = [ReportPeriod(2026, '11013', '1Q'), ReportPeriod(2026, '11012', '2Q')]
+        def row(amount, basis='CFS'):
+            return {'fs_div': basis, 'sj_div': 'CF', 'account_id': 'ifrs-full_CashFlowsFromUsedInOperatingActivities', 'thstrm_amount': str(amount)}
+        missing = parse_full_enrichment({('000001', periods[1].key): [row(30)]}, periods)
+        self.assertIsNone(missing['000001'][(2026, '2Q')]['ocf'])
+        mixed = parse_full_enrichment({('000001', periods[0].key): [row(10, 'OFS')], ('000001', periods[1].key): [row(30)]}, periods)
+        self.assertIsNone(mixed['000001'][(2026, '2Q')]['ocf'])
+        zero = parse_full_enrichment({('000001', periods[0].key): [row(0)], ('000001', periods[1].key): [row(30)]}, periods)
+        self.assertEqual(zero['000001'][(2026, '2Q')]['ocf'], 30)
+
     def test_price_checkpoint_is_scoped_to_completed_market_date(self):
         codes = ["000001"]
         market_date = date(2026, 9, 1)

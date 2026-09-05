@@ -20,7 +20,7 @@ def export_radar_previews(radar_payload=None, database_path=config.DATABASE_PATH
             row = connection.execute('SELECT * FROM stocks WHERE code=?', (code,)).fetchone()
             values = connection.execute('SELECT * FROM valuations WHERE code=?', (code,)).fetchone()
             values = dict(values) if values else {}
-            prices = price_rows(connection, code)[-65:]
+            prices = price_rows(connection, code)
             latest = prices[-1] if prices else {}
             prior = prices[-2].get('close') if len(prices) > 1 else None
             report = connection.execute('SELECT year,report_code FROM financials WHERE code=? ORDER BY year DESC, report_code DESC LIMIT 1', (code,)).fetchone()

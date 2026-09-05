@@ -44,9 +44,11 @@ async function responseJson(response: Response) {
 export function ThesisEvidenceReviewPanel({
   code,
   thesis,
+  checkId,
 }: {
   code: string;
   thesis: EvidenceThesis | null;
+  checkId?: string;
 }) {
   const [view, setView] = useState<ThesisEvidenceAiView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,18 +57,24 @@ export function ThesisEvidenceReviewPanel({
   const [consent, setConsent] = useState(false);
   const requestId = useRef<{ signature: string; id: string } | null>(null);
   const base = thesis
-    ? `/api/watchlist/${code}/theses/${thesis.id}/evidence-review`
+    ? `/api/watchlist/${code}/theses/${thesis.id}/evidence-review${checkId ? `?check=${encodeURIComponent(checkId)}` : ''}`
     : null;
   const relationCounts = {
     supports:
       view?.input.evidence.filter((item) => item.relation === 'supports')
-        .length ?? thesis?.evidence?.supports ?? 0,
+        .length ??
+      thesis?.evidence?.supports ??
+      0,
     challenges:
       view?.input.evidence.filter((item) => item.relation === 'challenges')
-        .length ?? thesis?.evidence?.challenges ?? 0,
+        .length ??
+      thesis?.evidence?.challenges ??
+      0,
     context:
       view?.input.evidence.filter((item) => item.relation === 'context')
-        .length ?? thesis?.evidence?.context ?? 0,
+        .length ??
+      thesis?.evidence?.context ??
+      0,
   };
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -149,6 +157,7 @@ export function ThesisEvidenceReviewPanel({
             revision: view.revision,
             signature: view.signature,
             consent: true,
+            ...(checkId ? { check_id: checkId } : {}),
           }),
         }),
       )) as { run: ThesisEvidenceAiRun };
@@ -175,7 +184,9 @@ export function ThesisEvidenceReviewPanel({
             <Sparkles className="size-4" />
           </span>
           <div>
-            <h3 className="text-sm font-semibold">AI 근거 검토</h3>
+            <h3 className="text-sm font-semibold">
+              {checkId ? 'AI 질문 검토' : 'AI 근거 검토'}
+            </h3>
             <p className="text-[10px] text-muted-foreground">
               연결 자료의 충돌·공백·다음 질문
             </p>
@@ -185,7 +196,7 @@ export function ThesisEvidenceReviewPanel({
           {thesis.content.title || '제목 없는 포인트'}
         </p>
         <p className="mt-1 line-clamp-3 text-[11px] leading-5 text-muted-foreground">
-          {thesis.content.body}
+          {view?.input.focus?.question ?? thesis.content.body}
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5 text-[10px]">
           <span className="rounded-lg bg-muted px-2 py-1">
@@ -364,15 +375,67 @@ export function ThesisEvidenceReviewPanel({
             <p className="font-semibold">
               {view?.input.company.name} · 저장 버전 {view?.revision}
             </p>
-            <p>{view?.input.point.body}</p>
+            <p className="font-medium">{view?.input.point.title}</p>
+            <p className="whitespace-pre-wrap">{view?.input.point.body}</p>
+            {!!view?.input.point.existing_questions.length && (
+              <details>
+                <summary className="cursor-pointer">
+                  저장한 질문 {view.input.point.existing_questions.length}개
+                </summary>
+                <ul className="mt-2 space-y-1">
+                  {view.input.point.existing_questions.map(
+                    (question, index) => (
+                      <li key={index}>{question}</li>
+                    ),
+                  )}
+                </ul>
+              </details>
+            )}
+            <p>
+              예상 시기: {view?.input.point.timing || '미작성'} · 약화 조건:{' '}
+              {view?.input.point.weakens || '미작성'}
+            </p>
+            {view?.input.focus && (
+              <section className="space-y-2 border-t pt-3">
+                <p>검토 질문: {view.input.focus.question}</p>
+                <p className="whitespace-pre-wrap">
+                  내 답변: {view.input.focus.answer || '미작성'}
+                </p>
+                <p className="whitespace-pre-wrap">
+                  남은 질문: {view.input.focus.unresolved || '미작성'}
+                </p>
+              </section>
+            )}
             <div className="border-t pt-3">
               <p className="font-medium">
                 연결 자료 {view?.input.evidence.length ?? 0}개
               </p>
               {view?.input.evidence.map((item) => (
-                <p key={item.id} className="mt-2 text-muted-foreground">
-                  {item.label} · {item.source_name} · {item.source_status}
-                </p>
+                <details
+                  key={item.id}
+                  className="mt-2 rounded-lg border p-2 text-muted-foreground"
+                >
+                  <summary className="cursor-pointer">
+                    {item.label} · {item.period ?? '대상 기간 미확인'}
+                    {item.excerpt_truncated
+                      ? ` · 발췌 ${item.excerpt.length}/${item.original_chars}자`
+                      : ''}
+                  </summary>
+                  <p className="mt-2">
+                    {item.source_name} ·{' '}
+                    {item.source_status === 'user_supplied'
+                      ? '사용자 입력·미검증'
+                      : item.source_status === 'stored_snapshot'
+                        ? '저장 원문'
+                        : item.source_status === 'ok'
+                          ? '정상'
+                          : '출처 상태 확인 필요'}
+                    {item.collected_at ? ` · 수집일 ${item.collected_at}` : ''}
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap break-words">
+                    {item.excerpt}
+                  </p>
+                </details>
               ))}
             </div>
           </div>

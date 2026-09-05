@@ -1,6 +1,8 @@
 'use client';
+import { ResearchTools } from '@/components/research-tools';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import {
   ArrowLeft,
@@ -101,13 +103,13 @@ type EvidenceTab =
 const tabs = [
   { value: 'thesis', label: '투자포인트' },
   { value: 'research', label: 'Research View' },
-  { value: 'kpis', label: '사업 KPI' },
-  { value: 'journal', label: '리서치 로그' },
   { value: 'overview', label: '핵심 현황' },
   { value: 'financials', label: '재무 추이' },
   { value: 'price', label: '가격·거래량' },
   { value: 'events', label: '공시' },
   { value: 'documents', label: '공시 원문' },
+  { value: 'kpis', label: '사업 KPI' },
+  { value: 'journal', label: '리서치 로그' },
 ];
 
 export function StockDetailWorkspace({
@@ -149,6 +151,7 @@ function Workspace({
   initialTab: DetailTab;
   initialEventsScope: 'focus' | 'all';
 }) {
+  const queryPointId = useSearchParams().get('thesis') ?? undefined;
   const [activeTab, setActiveTab] = useState<DetailTab>(
     !research.item &&
       (initialTab === 'thesis' ||
@@ -188,7 +191,10 @@ function Workspace({
     ),
   );
   const [documentSummaryOpen, setDocumentSummaryOpen] = useState(false);
-  const readingDocument = activeTab === 'documents';
+  const [questionMode, setQuestionMode] = useState(false);
+  // Both reading workspaces keep stock information accessible in the compact header.
+  const readingDocument =
+    activeTab === 'documents' || (activeTab === 'thesis' && questionMode);
   const showStockSummary = !readingDocument || documentSummaryOpen;
   const warnings = [
     ...new Set([...(stock.warnings ?? []), ...stock.radar.warnings]),
@@ -236,6 +242,8 @@ function Workspace({
       thesisDirty={thesisDirty}
       onAiDraftDirty={setAiDraftDirty}
       onThesisAdopt={(item) => {
+        setActiveTab('thesis');
+        setDrawer(null);
         setSelectedThesis(item);
         setUpdatedThesis(item);
         setThesisItems(
@@ -280,7 +288,9 @@ function Workspace({
                 <PanelLeft />
               </Button>
               <Link
-                href={stock.radar.discovery === 'manual' ? '/watchlist' : '/radar'}
+                href={
+                  stock.radar.discovery === 'manual' ? '/watchlist' : '/radar'
+                }
                 className={`text-[11px] text-muted-foreground hover:text-primary ${readingDocument ? 'hidden sm:inline' : ''}`}
               >
                 {stock.radar.discovery === 'manual' ? '관심종목' : 'Radar'}
@@ -521,7 +531,9 @@ function Workspace({
                   onSelect={setSelectedThesis}
                   onItems={setThesisItems}
                   confirmDiscard={confirmDiscard}
-                  preferredPointId={updatedThesis?.id}
+                  preferredPointId={updatedThesis?.id ?? queryPointId}
+                  preferredCheckId={updatedThesis?.content.checks.at(-1)?.id}
+                  onQuestionMode={setQuestionMode}
                   onRequestAi={() => {
                     setEvidenceTab('questions');
                     setRightVisible(true);
@@ -769,6 +781,7 @@ function CandidateRail({
             <BookOpen className="size-3" /> Learning
           </Link>
         </div>
+        <ResearchTools />
         <div className="mt-3">
           <Choices
             label="종목 목록"
@@ -902,7 +915,7 @@ function EvidenceRail({
               ...(registered
                 ? [
                     { value: 'thesis' as const, label: '내 검토' },
-                    { value: 'questions' as const, label: 'AI 질문' },
+                    { value: 'questions' as const, label: 'AI 제안' },
                     { value: 'thesis-evidence' as const, label: 'AI 근거' },
                   ]
                 : []),
@@ -1024,31 +1037,31 @@ function EvidenceRail({
         {tab === 'filing' && event && <FilingPanel event={event} />}
         {(['radar', 'sources', 'filing'] as EvidenceTab[]).includes(tab) &&
           warnings.length > 0 && (
-          <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-            <h3 className="text-[11px] font-semibold text-amber-900">
-              자료 범위·주의
-            </h3>
-            {warnings.map((warning, index) => (
-              <p
-                key={index}
-                className="mt-2 text-[10px] leading-5 text-amber-950/75"
-              >
-                {warning}
-              </p>
-            ))}
-          </section>
-        )}
+            <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+              <h3 className="text-[11px] font-semibold text-amber-900">
+                자료 범위·주의
+              </h3>
+              {warnings.map((warning, index) => (
+                <p
+                  key={index}
+                  className="mt-2 text-[10px] leading-5 text-amber-950/75"
+                >
+                  {warning}
+                </p>
+              ))}
+            </section>
+          )}
       </div>
       <p className="shrink-0 border-t px-4 py-3 text-[9px] leading-4 text-muted-foreground">
         {tab === 'thesis'
           ? '투자포인트와 검토 기록은 자료 갱신과 별도로 보존됩니다.'
           : tab === 'questions'
             ? '요청 버튼을 누를 때 선택한 투자포인트 저장본만 전송됩니다.'
-          : tab === 'thesis-evidence'
-            ? '선택한 투자포인트와 연결 자료 snapshot만 전송됩니다.'
-          : tab === 'explain'
-            ? 'AI 해석과 원자료를 구분해 확인하세요. 선정 근거 설명은 투자 판단이나 현재 조건 통과 여부를 뜻하지 않습니다.'
-            : 'Radar는 후보 발견 도구입니다. 원자료와 규칙 기반 확인 사항은 AI 분석 결과가 아닙니다.'}
+            : tab === 'thesis-evidence'
+              ? '선택한 투자포인트와 연결 자료 snapshot만 전송됩니다.'
+              : tab === 'explain'
+                ? 'AI 해석과 원자료를 구분해 확인하세요. 선정 근거 설명은 투자 판단이나 현재 조건 통과 여부를 뜻하지 않습니다.'
+                : 'Radar는 후보 발견 도구입니다. 원자료와 규칙 기반 확인 사항은 AI 분석 결과가 아닙니다.'}
       </p>
     </>
   );

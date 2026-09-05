@@ -153,7 +153,9 @@ export function PricePlot({
   if (!prices.length)
     return <EmptyData>수집된 가격 이력이 없습니다.</EmptyData>;
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div
+      className={`flex flex-1 flex-col gap-2 ${volume ? 'min-h-[330px]' : 'min-h-[200px]'}`}
+    >
       <ChartContainer
         config={priceConfig}
         className="min-h-[160px] w-full flex-1 aspect-auto"
@@ -253,7 +255,7 @@ const periods: { value: PricePeriod; label: string }[] = [
   { value: '1m', label: '1개월' },
   { value: '3m', label: '3개월' },
   { value: '1y', label: '1년' },
-  { value: 'all', label: '전체' },
+  { value: 'all', label: '보유 전체' },
 ];
 
 export function OverviewPanel({
@@ -280,7 +282,7 @@ export function OverviewPanel({
           value={displayNumber(v.ttm_roe_pct, '%')}
         />
       </div>
-      <section className="flex min-h-[260px] flex-1 flex-col rounded-2xl border bg-card p-4">
+      <section className="flex min-h-[300px] flex-1 flex-col rounded-2xl border bg-card p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold">가격 추이</h2>
@@ -357,6 +359,13 @@ export function FinancialPanel({ stock }: { stock: StockDetail }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">재무 추이</h2>
+            <a
+              className="mt-1 inline-block text-xs text-primary underline underline-offset-4"
+              href={`/api/stocks/${stock.code}/export?format=csv`}
+              download
+            >
+              출처 포함 CSV 저장
+            </a>
             <p className="mt-1 text-[10px] text-muted-foreground">
               DART · 손익·현금흐름은 단독 분기, 자본·부채는 기말 잔액
             </p>
@@ -666,8 +675,7 @@ function FinancialObservationLinker({
               <p
                 className={`mt-1 text-[10px] ${sourceStatus?.status === 'ok' ? 'text-muted-foreground' : 'text-amber-800'}`}
               >
-                출처 상태 ·{' '}
-                {financialEvidenceStatusLabel(sourceStatus?.status)}
+                출처 상태 · {financialEvidenceStatusLabel(sourceStatus?.status)}
                 {sourceStatus?.warning ? ` · ${sourceStatus.warning}` : ''}
               </p>
             </div>
@@ -776,7 +784,7 @@ export function PricePanel({ stock }: { stock: StockDetail }) {
   const [period, setPeriod] = useState<PricePeriod>('3m');
   const latest = stock.prices.at(-1);
   return (
-    <section className="flex h-full min-h-[480px] flex-col rounded-2xl border bg-card p-4">
+    <section className="flex h-full min-h-[620px] flex-col rounded-2xl border bg-card p-4">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold">가격과 거래량</h2>

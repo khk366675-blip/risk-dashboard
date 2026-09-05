@@ -417,6 +417,7 @@ def parse_major_quarters(
             "year": year,
             "quarter": period.quarter,
             "report_code": report_code,
+            "statement_basis": rows[0].get("fs_div") if rows else None,
             "rev": revenue,
             "op": operating_profit,
             "ni": net_income,
@@ -435,7 +436,7 @@ def parse_major_quarters(
             previous = [
                 item
                 for item in quarters
-                if item["year"] == quarter["year"] and quarter_order[item["quarter"]] < 4
+                if item["year"] == quarter["year"] and quarter_order[item["quarter"]] < 4 and item.get("statement_basis") == quarter.get("statement_basis")
             ]
             for metric in ("rev", "op", "ni"):
                 annual = quarter.get(metric)
@@ -472,24 +473,25 @@ def parse_full_enrichment(
             "interest": interest,
             "cash": cash,
             "fin_debt": financial_debt,
+            "statement_basis": rows[0].get("fs_div") if rows else None,
         }
 
     for code, quarter_map in result.items():
         ordered = sorted(quarter_map.items(), key=lambda item: (item[0][0], quarter_order[item[0][1]]))
         for index, ((year, quarter), values) in enumerate(ordered):
             cumulative = values.pop("ocf_cumulative", None)
-            prior_cumulative = 0
+            prior_cumulative = 0 if quarter == "1Q" else None
             if index > 0:
                 (prior_year, prior_quarter), prior_values = ordered[index - 1]
-                if prior_year == year and quarter_order[prior_quarter] < quarter_order[quarter]:
-                    prior_cumulative = prior_values.get("ocf_ytd") or 0
-            values["ocf"] = cumulative - prior_cumulative if cumulative is not None else None
+                if prior_year == year and quarter_order[prior_quarter] == quarter_order[quarter] - 1 and prior_values.get("statement_basis") == values.get("statement_basis"):
+                    prior_cumulative = prior_values.get("ocf_ytd")
+            values["ocf"] = cumulative - prior_cumulative if cumulative is not None and prior_cumulative is not None else None
             values["ocf_ytd"] = cumulative
             if quarter == "4Q" and values.get("interest") is not None:
                 previous_interest = [
                     prior_values.get("interest")
                     for (prior_year, prior_quarter), prior_values in ordered
-                    if prior_year == year and quarter_order[prior_quarter] < 4
+                    if prior_year == year and quarter_order[prior_quarter] < 4 and prior_values.get("statement_basis") == values.get("statement_basis")
                 ]
                 if len(previous_interest) == 3 and all(value is not None for value in previous_interest):
                     values["interest"] = values["interest"] - sum(float(value) for value in previous_interest if value is not None)

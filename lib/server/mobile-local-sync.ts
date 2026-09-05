@@ -1,4 +1,5 @@
 import { ResearchSystemStore } from './research-system-store.ts';
+import { generalMobileNoteCode } from '../mobile-note-target.ts';
 import { ResearchStore } from './research-store.ts';
 import { buildLocalMobileSnapshot } from './local-mobile-snapshot.ts';
 import {
@@ -13,6 +14,9 @@ export type MobilePublishResult = {
   watchlist_count: number;
   learning_count: number;
   bytes: number;
+  radar_count: number;
+  radar_as_of: string;
+  market_as_of: string;
 };
 
 export type MobilePullResult = {
@@ -41,6 +45,9 @@ export async function publishLocalMobileSnapshot(): Promise<MobilePublishResult>
     watchlist_count: snapshot.stocks.length,
     learning_count: snapshot.learning.length,
     bytes,
+    radar_count: snapshot.radar.candidate_count,
+    radar_as_of: snapshot.radar.as_of,
+    market_as_of: snapshot.market.generated_at,
   };
 }
 
@@ -53,6 +60,24 @@ export async function pullRemoteMobileNotes(): Promise<MobilePullResult> {
   try {
     const system = new ResearchSystemStore(owner.db);
     for (const note of notes.reverse()) {
+      if (note.code === generalMobileNoteCode) {
+        const exists = owner.db
+          .prepare('SELECT id FROM learning_items WHERE id=?')
+          .get(note.id);
+        if (!exists)
+          system.saveLearning({
+            id: note.id,
+            kind: 'article',
+            status: 'to_read',
+            title: note.body.split(/\r?\n/)[0].slice(0, 150) || '모바일 자료',
+            summary: note.body,
+            tags: ['모바일 자료'],
+            linked_codes: [],
+          });
+        await markRemoteNoteConsumed(env, note.id, new Date().toISOString());
+        imported.push(note.id);
+        continue;
+      }
       const record = owner.get(note.code);
       if (!record?.item.active) {
         skipped.push({ id: note.id, reason: '현재 관심종목이 아님' });

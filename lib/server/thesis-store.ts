@@ -107,11 +107,34 @@ export class ThesisStore {
       .run(id);
   }
   // The caller must own the transaction (also used for atomic registration).
+  private validateEvidenceLinks(id: string, content: ThesisContent) {
+    const tables: Record<string, string> = {
+      document: 'research_evidence',
+      financial: 'research_financial_evidence',
+      manual: 'research_manual_evidence',
+    };
+    for (const check of content.checks)
+      for (const reference of check.evidence_ids ?? []) {
+        const [kind, evidenceId] = reference.split(':');
+        // Archived links remain valid historical references, but AI excludes them.
+        if (
+          !this.db
+            .prepare(
+              `SELECT id FROM ${tables[kind]} WHERE id=? AND thesis_id=?`,
+            )
+            .get(evidenceId, id)
+        )
+          throw new ThesisError(
+            '다른 투자포인트의 자료는 이 질문에 연결할 수 없습니다.',
+          );
+      }
+  }
   createInTransaction(code: string, id: string, value: unknown) {
     this.active(code);
     if (!uuidPattern.test(id))
       throw new ThesisError('요청 식별자를 확인해 주세요.');
     const content = validateThesisContent(value);
+    this.validateEvidenceLinks(id, content);
     const existing = this.db
       .prepare('SELECT * FROM investment_theses WHERE id=?')
       .get(id);
@@ -193,6 +216,7 @@ export class ThesisStore {
       ? validateThesisContent(change.content)
       : current.content;
     const archived = change.archived ?? current.archived;
+    this.validateEvidenceLinks(id, content);
     if (
       JSON.stringify(content) === JSON.stringify(current.content) &&
       archived === current.archived

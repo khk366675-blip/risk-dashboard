@@ -1,9 +1,4 @@
-import marketSnapshot from '../../public/data/markets/latest.json' with {
-  type: 'json',
-};
-import radarSnapshot from '../../public/data/radar/latest.json' with {
-  type: 'json',
-};
+import { readCurrentMarket, readCurrentRadar } from './current-snapshots.ts';
 import {
   mobileSnapshotSchema,
   type MobileEvidenceItem,
@@ -24,8 +19,8 @@ const dartUrl = (receipt: string | null) =>
     : null;
 
 export function buildLocalMobileSnapshot(): MobileSnapshot {
-  const market = marketSnapshot as MobileMarket;
-  const radar = radarSnapshot as RadarRun;
+  const market = readCurrentMarket() as MobileMarket;
+  const radar = readCurrentRadar() as RadarRun;
   const owner = new ResearchStore();
   try {
     const system = new ResearchSystemStore(owner.db);
@@ -38,7 +33,9 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
     const stocks = owner.list().flatMap((item) => {
       const record = owner.get(item.code);
       if (!record) return [];
-      const research = workbench.stocks.find((stock) => stock.code === item.code);
+      const research = workbench.stocks.find(
+        (stock) => stock.code === item.code,
+      );
       const detail = record.stock;
       return [
         {
@@ -153,12 +150,17 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
             return {
               id: thesis.id,
               revision: thesis.revision,
-              title:
-                thesis.content.title || thesis.content.body.split('\n')[0],
+              title: thesis.content.title || thesis.content.body.split('\n')[0],
               body: thesis.content.body,
               timing: thesis.content.timing,
               weakens: thesis.content.weakens,
               checks: thesis.content.checks.map((check) => check.text),
+              check_reviews: thesis.content.checks.map((check) => ({
+                question: check.text,
+                answer: check.answer ?? '',
+                unresolved: check.unresolved ?? '',
+                status: check.status ?? 'open',
+              })),
               review: thesis.review,
               evidence,
               ai_review: aiReview,

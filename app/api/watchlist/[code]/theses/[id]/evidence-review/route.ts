@@ -15,7 +15,10 @@ export async function GET(request: Request, context: Context) {
   try {
     const { code, id } = await context.params;
     thesisRequest(request, code);
-    return thesisJson(await withThesisEvidenceAi((ai) => ai.view(code, id)));
+    const checkId = new URL(request.url).searchParams.get('check') || undefined;
+    return thesisJson(
+      await withThesisEvidenceAi((ai) => ai.view(code, id, checkId)),
+    );
   } catch (error) {
     return thesisFailure(error);
   }
@@ -26,7 +29,7 @@ export async function POST(request: Request, context: Context) {
     const { code, id } = await context.params;
     thesisRequest(request, code, true);
     const body = await thesisBody(request);
-    onlyKeys(body, ['id', 'revision', 'signature', 'consent']);
+    onlyKeys(body, ['id', 'revision', 'signature', 'consent', 'check_id']);
     const run = await withThesisEvidenceAi((ai) =>
       ai.generate(
         code,
@@ -36,6 +39,7 @@ export async function POST(request: Request, context: Context) {
           revision: number;
           signature: string;
           consent: boolean;
+          check_id?: string;
         },
       ),
     );

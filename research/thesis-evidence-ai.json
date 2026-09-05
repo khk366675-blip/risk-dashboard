@@ -1,7 +1,7 @@
 {
   "model": "gpt-5.6-sol",
   "reasoning_effort": "medium",
-  "prompt_version": "thesis-evidence-review.v3",
+  "prompt_version": "thesis-evidence-review.v4",
   "endpoint": "https://api.openai.com/v1/responses",
   "timeout_ms": 45000,
   "max_input_bytes": 48000,

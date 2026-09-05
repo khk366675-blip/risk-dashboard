@@ -7,9 +7,9 @@
   "sector": "중견기업부",
   "industry": "회사 본부 및 경영 컨설팅 서비스업",
   "listing_date": "2000-01-04 00:00:00",
-  "run_id": "full_market_20260904_224330",
-  "generated_at": "2026-09-04T22:49:37.550134+09:00",
-  "collected_at": "2026-09-04T22:43:30+09:00",
+  "run_id": "full_market_20260905_105541",
+  "generated_at": "2026-09-05T11:09:37.248633+09:00",
+  "collected_at": "2026-09-05T10:55:41+09:00",
   "summary": {
     "latest_price": 3900,
     "price_as_of": "2026-09-04",
@@ -676,7 +676,7 @@
     },
     "contradictions": [],
     "warnings": [],
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
@@ -686,7 +686,7 @@
       "source": "네이버 금융 일별 시세",
       "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-04T22:43:30+09:00"
+      "collected_at": "2026-09-05T10:55:41+09:00"
     },
     "financials": {
       "status": "partial",

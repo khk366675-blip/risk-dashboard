@@ -7,9 +7,9 @@
   "sector": "업종 미수집",
   "industry": "토목 건설업",
   "listing_date": "2007-08-31 00:00:00",
-  "run_id": "full_market_20260904_224330",
-  "generated_at": "2026-09-04T22:49:37.521242+09:00",
-  "collected_at": "2026-09-04T22:43:30+09:00",
+  "run_id": "full_market_20260905_105541",
+  "generated_at": "2026-09-05T11:09:37.209611+09:00",
+  "collected_at": "2026-09-05T10:55:41+09:00",
   "summary": {
     "latest_price": 16110,
     "price_as_of": "2026-09-04",
@@ -679,7 +679,7 @@
     "warnings": [
       "업종 분류 미수집: 업종 백분위 대신 Universe 백분위 사용"
     ],
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
@@ -689,7 +689,7 @@
       "source": "네이버 금융 일별 시세",
       "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-04T22:43:30+09:00"
+      "collected_at": "2026-09-05T10:55:41+09:00"
     },
     "financials": {
       "status": "partial",

@@ -1,3 +1,4 @@
+param([switch]$NoBrowser)
 $ErrorActionPreference = "Stop"
 
 $projectDirectory = "C:\Users\khdkf\value-invest-dashboard"
@@ -165,8 +166,8 @@ try {
         $serverInfo.mode -eq "production" -and
         [int]$serverInfo.pid -eq [int]$portOwner.ProcessId
 
-    if ($managedProductionServer) {
-        Open-Dashboard
+    if ($managedProductionServer -and -not (Test-BuildRequired)) {
+        if (-not $NoBrowser) { Open-Dashboard }
         exit 0
     }
 
@@ -235,7 +236,7 @@ try {
         started_at = (Get-Date).ToUniversalTime().ToString("o")
     } | ConvertTo-Json | Set-Content -LiteralPath $serverInfoPath -Encoding ASCII
 
-    Open-Dashboard
+    if (-not $NoBrowser) { Open-Dashboard }
 }
 catch {
     Show-LaunchError $_.Exception.Message

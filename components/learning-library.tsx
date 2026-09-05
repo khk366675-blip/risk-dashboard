@@ -1,19 +1,16 @@
 'use client';
+import { PrimaryNavigation } from '@/components/primary-navigation';
+import { useLocalDraft } from '@/components/draft-recovery';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
   Archive,
   BookOpen,
   ChevronRight,
-  GitCompareArrows,
-  LineChart,
   Plus,
-  Radar,
   RotateCcw,
   Save,
-  Star,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,6 +81,17 @@ export function LearningLibrary({
   const visibleItems = showArchived ? archivedItems : items;
   const selected = visibleItems.find((item) => item.id === selectedId) ?? null;
   const shown = editing ? draft : (selected ?? blank());
+  const recovery = useLocalDraft(
+    'learning:editor',
+    draft,
+    editing &&
+      JSON.stringify(draft) !== JSON.stringify(draft.id ? selected : blank()),
+    (value) => {
+      setDraft(value);
+      setSelectedId(value.id ?? null);
+      setEditing(true);
+    },
+  );
   const update = (key: string, value: unknown) =>
     setDraft((prior) => ({ ...prior, [key]: value }));
   const startNew = () => {
@@ -111,6 +119,7 @@ export function LearningLibrary({
         }),
       );
       setItems(result.items);
+      recovery.clear();
       setArchivedItems(result.archived_items ?? archivedItems);
       const saved =
         result.items.find((item: LearningItem) => item.id === draft.id) ??
@@ -176,10 +185,13 @@ export function LearningLibrary({
       <div className="grid h-full grid-cols-1 md:grid-cols-[210px_minmax(0,1fr)]">
         <AppNav active="learning" />
         <main className="flex min-w-0 flex-col overflow-hidden">
+          {recovery.banner}
           <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-white px-4 py-3 sm:h-16 sm:flex-nowrap sm:px-5 sm:py-0">
             <div className="min-w-0">
               <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Link href="/markets" className="hover:text-foreground">Markets</Link>
+                <Link href="/markets" className="hover:text-foreground">
+                  Markets
+                </Link>
                 <ChevronRight className="size-3" />
                 <span className="text-foreground">Learning Library</span>
               </div>
@@ -208,7 +220,9 @@ export function LearningLibrary({
             </div>
           </header>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:grid md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className={`flex min-h-0 shrink-0 flex-col border-b bg-slate-50/60 md:max-h-none md:border-b-0 md:border-r ${filtered.length ? 'max-h-[220px]' : 'max-h-[126px]'}`}>
+            <aside
+              className={`flex min-h-0 shrink-0 flex-col border-b bg-slate-50/60 md:max-h-none md:border-b-0 md:border-r ${filtered.length ? 'max-h-[220px]' : 'max-h-[126px]'}`}
+            >
               <div className="border-b p-3">
                 <Input
                   value={query}
@@ -616,47 +630,10 @@ export function AppNav({ active }: { active: 'learning' | 'compare' }) {
           </small>
         </span>
       </Link>
-      <nav className="mt-8 space-y-1">
-        <Nav href="/markets" icon={LineChart} label="Markets" />
-        <Nav href="/radar" icon={Radar} label="Radar" />
-        <Nav href="/watchlist" icon={Star} label="관심종목" />
-        <Nav
-          href="/compare"
-          icon={GitCompareArrows}
-          label="기업 비교"
-          active={active === 'compare'}
-        />
-        <Nav
-          href="/learning"
-          icon={BookOpen}
-          label="Learning"
-          active={active === 'learning'}
-        />
-      </nav>
+      <PrimaryNavigation active={active} />
       <p className="mt-auto border-t pt-4 text-[8px] leading-4 text-muted-foreground">
         사용자 기록은 로컬 저장소에 보존됩니다.
       </p>
     </aside>
-  );
-}
-function Nav({
-  href,
-  icon: Icon,
-  label,
-  active = false,
-}: {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  active?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[11px] font-medium ${active ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
-    >
-      <Icon className="size-4" />
-      {label}
-    </Link>
   );
 }

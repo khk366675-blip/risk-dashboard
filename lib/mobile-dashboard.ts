@@ -67,6 +67,12 @@ export type MobileThesis = {
   timing: string;
   weakens: string;
   checks: string[];
+  check_reviews?: {
+    question: string;
+    answer: string;
+    unresolved: string;
+    status: string;
+  }[];
   review: ThesisStatusRecord;
   evidence: MobileEvidenceItem[];
   ai_review?: {

@@ -142,3 +142,18 @@ test('evidence AI does not send without linked evidence or explicit consent', as
     { status: 400 },
   );
 });
+
+test('focused question uses only chosen evidence and preserves answers in versioned input', async t=>{
+  const {owner,thesis,evidence,service}=fixture(t,success);
+  const check={id:randomUUID(),text:'해외 채널 확대를 어떻게 확인할까?',answer:'매장 수는 확인했으나 매출 기여는 미확인',unresolved:'동일 기간 채널 매출 필요',status:'reviewing',evidence_ids:[`manual:${evidence.id}`]};
+  new ThesisStore(owner.db).update(candidate.code,thesis.id,thesis.revision,{content:{...thesis.content,checks:[check]}});
+  const view=service.view(candidate.code,thesis.id,check.id);
+  assert.deepEqual(view.input.evidence.map(e=>e.id),check.evidence_ids);assert.equal(view.input.focus.answer,check.answer);
+  assert.notEqual(view.signature,service.view(candidate.code,thesis.id).signature);
+  const run=await service.generate(candidate.code,thesis.id,{id:randomUUID(),revision:view.revision,signature:view.signature,consent:true,check_id:check.id});
+  assert.equal(run.state,'completed');assert.equal(service.view(candidate.code,thesis.id).run,null);assert.equal(service.view(candidate.code,thesis.id,check.id).run.id,run.id);
+  const point=new ThesisStore(owner.db).list(candidate.code)[0];assert.equal(point.content.checks[0].status,'reviewing');
+  new ThesisStore(owner.db).update(candidate.code,point.id,point.revision,{content:{...point.content,checks:[{...check,evidence_ids:[]}]}});
+  const noEvidence=service.view(candidate.code,point.id,check.id);assert.equal(noEvidence.evidence_count,0);
+  await assert.rejects(service.generate(candidate.code,point.id,{id:randomUUID(),revision:noEvidence.revision,signature:noEvidence.signature,consent:true,check_id:check.id}),{status:422});
+});

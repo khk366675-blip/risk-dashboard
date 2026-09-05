@@ -1,4 +1,5 @@
 'use client';
+import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -6,15 +7,11 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   ArrowUpRight,
-  BookOpen,
   Check,
   ChevronRight,
-  CircleDot,
   Inbox,
-  GitCompareArrows,
   PanelRight,
   Plus,
-  Radar,
   RefreshCw,
   Star,
 } from 'lucide-react';
@@ -229,6 +226,7 @@ export function ResearchWorkbench({
           <ArrowLeft className="size-4" />
           Value Dashboard
         </Link>
+        <PrimaryNavigation active="watchlist" />
         <p className="mt-8 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Watchlist
         </p>
@@ -255,32 +253,6 @@ export function ResearchWorkbench({
             </button>
           ))}
         </nav>
-        <div className="mt-auto space-y-1 border-t pt-4">
-          <Link
-            href="/markets"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-slate-600 hover:bg-slate-100"
-          >
-            <CircleDot className="size-4" /> Markets
-          </Link>
-          <Link
-            href="/radar"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-slate-600 hover:bg-slate-100"
-          >
-            <Radar className="size-4" /> Radar
-          </Link>
-          <Link
-            href="/compare"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-slate-600 hover:bg-slate-100"
-          >
-            <GitCompareArrows className="size-4" /> 기업 비교
-          </Link>
-          <Link
-            href="/learning"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-slate-600 hover:bg-slate-100"
-          >
-            <BookOpen className="size-4" /> Learning
-          </Link>
-        </div>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">

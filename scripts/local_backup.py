@@ -77,7 +77,7 @@ def check_database(file: Path):
                     if not isinstance(content, dict) or set(content) != fields or any(not isinstance(content[k], str) for k in fields - {'checks'}) or not content['body'].strip() or not isinstance(content['checks'], list):
                         raise BackupError('투자포인트 내용의 형식이 손상됐습니다.')
                     checks = content['checks']
-                    if any(not isinstance(c, dict) or set(c) != {'id', 'text'} or not isinstance(c['id'], str) or not isinstance(c['text'], str) or not c['text'].strip() for c in checks) or len({c['id'] for c in checks}) != len(checks):
+                    if any(not isinstance(c, dict) or not {'id', 'text'} <= set(c) or set(c) - {'id', 'text', 'answer', 'unresolved', 'status', 'evidence_ids'} or not isinstance(c['id'], str) or not isinstance(c['text'], str) or not c['text'].strip() or any(k in c and not isinstance(c[k], str) for k in ('answer', 'unresolved')) or ('status' in c and c['status'] not in ('open', 'reviewing', 'answered')) or ('evidence_ids' in c and (not isinstance(c['evidence_ids'], list) or any(not isinstance(x, str) for x in c['evidence_ids']))) for c in checks) or len({c['id'] for c in checks}) != len(checks):
                         raise BackupError('검증 항목 형식이 손상됐습니다.')
             for row in db.execute('SELECT id,revision,archived,content_json FROM investment_theses'):
                 latest = db.execute('SELECT revision,archived,content_json FROM investment_thesis_revisions WHERE thesis_id=? ORDER BY revision DESC LIMIT 1', (row[0],)).fetchone()
@@ -203,11 +203,17 @@ def check_database(file: Path):
                 raise BackupError('AI 근거 검토 저장소의 선행 테이블이 누락됐습니다.')
             for thesis_id, revision, signature, raw_input, state, raw_answer, raw_usage in db.execute('SELECT thesis_id,thesis_revision,evidence_signature,input_json,state,answer_json,usage_json FROM thesis_evidence_ai_runs'):
                 data = json.loads(raw_input)
-                if not re.fullmatch(r'[a-f0-9]{64}', signature or '') or not isinstance(data, dict) or set(data) != {'company', 'point', 'evidence'} or not isinstance(data.get('evidence'), list):
+                if not re.fullmatch(r'[a-f0-9]{64}', signature or '') or not isinstance(data, dict) or not {'company', 'point', 'evidence'} <= set(data) or set(data) - {'company', 'point', 'evidence', 'focus'} or not isinstance(data.get('evidence'), list):
                     raise BackupError('AI 근거 검토 전송 범위가 손상됐습니다.')
                 source = db.execute('SELECT content_json FROM investment_thesis_revisions WHERE thesis_id=? AND revision=?', (thesis_id, revision)).fetchone()
                 if not source or data.get('point', {}).get('revision') != revision or data.get('point', {}).get('id') != thesis_id:
                     raise BackupError('AI 근거 검토와 투자포인트 저장 버전이 일치하지 않습니다.')
+                if 'focus' in data:
+                    focus = data['focus']
+                    checks = json.loads(source[0])['checks']
+                    check = next((c for c in checks if c['id'] == focus.get('id')), None) if isinstance(focus, dict) else None
+                    if not check or focus != {'id': check['id'], 'question': check['text'], 'answer': check.get('answer', ''), 'unresolved': check.get('unresolved', '')}:
+                        raise BackupError('AI 검토 질문과 저장된 답변 버전이 일치하지 않습니다.')
                 if state not in ('pending', 'completed', 'error') or (state == 'completed') != (raw_answer is not None):
                     raise BackupError('AI 근거 검토 실행 상태와 결과가 일치하지 않습니다.')
                 if raw_answer is not None:

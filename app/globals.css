@@ -51,6 +51,11 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* A reading workspace: preserve panel scrolling instead of shrinking text. */
+body [class~="text-[8px]"], body [class~="text-[9px]"], body [class~="text-[10px]"] { font-size: 11px; line-height: 1.55; }
+body [class~="text-[11px]"] { font-size: 12px; line-height: 1.6; }
+textarea { font-size: 14px; line-height: 1.8; }
+
 :root {
   --background: oklch(0.985 0.005 255);
   --foreground: oklch(0.19 0.025 258);

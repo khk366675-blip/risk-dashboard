@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useLocalDraft } from '@/components/draft-recovery';
 import {
   Archive,
   BarChart3,
@@ -139,8 +140,12 @@ export function KpiWorkspace({ code }: { code: string }) {
     visibleKpis[0] ??
     null;
   return (
-    <div className={`flex h-full min-h-[580px] flex-col overflow-y-auto rounded-2xl border bg-card md:grid md:overflow-hidden ${selected ? 'md:grid-cols-[210px_minmax(0,1fr)_250px] 2xl:grid-cols-[250px_minmax(0,1fr)_300px]' : 'md:grid-cols-[250px_minmax(0,1fr)]'}`}>
-      <aside className={`flex min-h-0 shrink-0 flex-col border-b bg-slate-50/70 md:max-h-none md:border-b-0 md:border-r ${visibleKpis.length ? 'max-h-[220px]' : 'max-h-[168px]'}`}>
+    <div
+      className={`flex h-full min-h-[580px] flex-col overflow-y-auto rounded-2xl border bg-card md:grid md:overflow-hidden ${selected ? 'md:grid-cols-[210px_minmax(0,1fr)_250px] 2xl:grid-cols-[250px_minmax(0,1fr)_300px]' : 'md:grid-cols-[250px_minmax(0,1fr)]'}`}
+    >
+      <aside
+        className={`flex min-h-0 shrink-0 flex-col border-b bg-slate-50/70 md:max-h-none md:border-b-0 md:border-r ${visibleKpis.length ? 'max-h-[220px]' : 'max-h-[168px]'}`}
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div>
             <h2 className="text-xs font-semibold">사업 KPI</h2>
@@ -172,7 +177,9 @@ export function KpiWorkspace({ code }: { code: string }) {
             )}
           </div>
         </div>
-        <div className={`min-h-0 flex-1 p-2 ${visibleKpis.length ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        <div
+          className={`min-h-0 flex-1 p-2 ${visibleKpis.length ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        >
           {visibleKpis.map((item) => (
             <button
               key={item.id}
@@ -200,10 +207,14 @@ export function KpiWorkspace({ code }: { code: string }) {
             <div className="px-3 py-4 text-center">
               <CheckCircle2 className="mx-auto size-4 text-slate-300" />
               <p className="mt-2 text-[10px] font-medium">
-                {showArchived ? '보관된 KPI가 없습니다' : '추적 중인 KPI가 없습니다'}
+                {showArchived
+                  ? '보관된 KPI가 없습니다'
+                  : '추적 중인 KPI가 없습니다'}
               </p>
               <p className="mt-1 text-[9px] text-muted-foreground">
-                {showArchived ? '보관한 KPI는 이곳에서 복구합니다.' : '입력란에서 첫 KPI를 추가하세요.'}
+                {showArchived
+                  ? '보관한 KPI는 이곳에서 복구합니다.'
+                  : '입력란에서 첫 KPI를 추가하세요.'}
               </p>
             </div>
           )}
@@ -709,6 +720,19 @@ export function JournalWorkspace({ code }: { code: string }) {
     [body, setBody] = useState(''),
     [date, setDate] = useState(new Date().toISOString().slice(0, 10)),
     [url, setUrl] = useState('');
+  const recovery = useLocalDraft(
+    `journal:${code}`,
+    { editingId, kind, title, body, date, url },
+    Boolean(title || body || url),
+    (value) => {
+      setEditingId(value.editingId);
+      setKind(value.kind);
+      setTitle(value.title);
+      setBody(value.body);
+      setDate(value.date);
+      setUrl(value.url);
+    },
+  );
   const save = async () => {
     const ok = await state.mutate(editingId ? 'PATCH' : 'POST', {
       kind: 'journal',
@@ -720,6 +744,7 @@ export function JournalWorkspace({ code }: { code: string }) {
       source_url: url,
     });
     if (ok) {
+      recovery.clear();
       setTitle('');
       setBody('');
       setUrl('');
@@ -747,7 +772,9 @@ export function JournalWorkspace({ code }: { code: string }) {
   };
   return (
     <div className="flex h-full min-h-[560px] flex-col overflow-y-auto rounded-2xl border bg-card md:grid md:grid-cols-[minmax(0,1fr)_300px] md:overflow-hidden 2xl:grid-cols-[minmax(0,1fr)_330px]">
-      <main className={`min-h-0 shrink-0 overflow-y-auto md:max-h-none ${visibleJournal.length ? 'max-h-[45dvh]' : 'max-h-[230px]'}`}>
+      <main
+        className={`min-h-0 shrink-0 overflow-y-auto md:max-h-none ${visibleJournal.length ? 'max-h-[45dvh]' : 'max-h-[230px]'}`}
+      >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white/95 px-5 py-3 backdrop-blur">
           <div>
             <h2 className="text-xs font-semibold">Research Journal</h2>
@@ -851,7 +878,9 @@ export function JournalWorkspace({ code }: { code: string }) {
             <div className="px-3 py-5 text-center">
               <CheckCircle2 className="mx-auto size-4 text-slate-300" />
               <p className="mt-2 text-[10px] font-medium">
-                {showArchived ? '보관된 로그가 없습니다' : '아직 리서치 로그가 없습니다'}
+                {showArchived
+                  ? '보관된 로그가 없습니다'
+                  : '아직 리서치 로그가 없습니다'}
               </p>
               <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
                 {showArchived
@@ -886,6 +915,7 @@ export function JournalWorkspace({ code }: { code: string }) {
             }}
             className="mt-4"
           >
+            {recovery.banner}
             <label className="text-[9px] font-medium">분류</label>
             <select
               className="mt-1 h-9 w-full rounded-xl border bg-background px-3 text-xs"
@@ -979,9 +1009,18 @@ export function ResearchView({ stock }: { stock: StockDetail }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold">Research View</h2>
+              <a
+                className="mt-2 inline-block text-xs text-primary underline underline-offset-4"
+                href={`/api/stocks/${stock.code}/export?format=md`}
+                download
+              >
+                출처 포함 Markdown 저장
+              </a>
             </div>
             <Badge variant="secondary">
-              {workbenchLoading ? '불러오는 중' : `${theses.length}개 투자포인트`}
+              {workbenchLoading
+                ? '불러오는 중'
+                : `${theses.length}개 투자포인트`}
             </Badge>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1001,27 +1040,29 @@ export function ResearchView({ stock }: { stock: StockDetail }) {
                 투자포인트와 연결 자료를 불러오는 중입니다.
               </p>
             )}
-            {!workbenchLoading && theses.map((thesis) => (
-              <article key={thesis.id} className="rounded-xl border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-[11px] font-semibold">
-                    {thesis.content.title || thesis.content.body.split('\n')[0]}
-                  </h4>
-                  <Badge variant="outline" className="text-[8px]">
-                    근거 {thesis.evidence.total}
-                  </Badge>
-                </div>
-                <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-[10px] leading-5 text-slate-600">
-                  {thesis.content.body}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-[9px] text-muted-foreground">
-                  <span>뒷받침 {thesis.evidence.supports}</span>
-                  <span>약화 {thesis.evidence.challenges}</span>
-                  <span>미확인 {thesis.evidence.context}</span>
-                  <span>상태 {thesisReviewStates[thesis.review.state]}</span>
-                </div>
-              </article>
-            ))}
+            {!workbenchLoading &&
+              theses.map((thesis) => (
+                <article key={thesis.id} className="rounded-xl border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-[11px] font-semibold">
+                      {thesis.content.title ||
+                        thesis.content.body.split('\n')[0]}
+                    </h4>
+                    <Badge variant="outline" className="text-[8px]">
+                      근거 {thesis.evidence.total}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-[10px] leading-5 text-slate-600">
+                    {thesis.content.body}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[9px] text-muted-foreground">
+                    <span>뒷받침 {thesis.evidence.supports}</span>
+                    <span>약화 {thesis.evidence.challenges}</span>
+                    <span>미확인 {thesis.evidence.context}</span>
+                    <span>상태 {thesisReviewStates[thesis.review.state]}</span>
+                  </div>
+                </article>
+              ))}
             {!workbenchLoading && !theses.length && (
               <Empty
                 title="작성된 투자포인트가 없습니다"
@@ -1144,7 +1185,9 @@ export function ResearchView({ stock }: { stock: StockDetail }) {
                 className="flex items-center justify-between gap-3 text-[10px]"
               >
                 <span className="truncate text-muted-foreground">
-                  {source.source || sourceDisplayLabels[key] || '출처 확인 필요'}
+                  {source.source ||
+                    sourceDisplayLabels[key] ||
+                    '출처 확인 필요'}
                 </span>
                 <Badge
                   variant={source.status === 'ok' ? 'secondary' : 'outline'}

@@ -1,4 +1,5 @@
 'use client';
+import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -9,13 +10,11 @@ import {
   ChevronRight,
   Gauge,
   Globe2,
-  GitCompareArrows,
   LineChart as LineChartIcon,
   Radar,
   RefreshCw,
   Search,
   Upload,
-  Star,
 } from 'lucide-react';
 import {
   CartesianGrid,
@@ -53,7 +52,6 @@ import {
   type MarketGroup,
   type MarketSnapshot,
 } from '@/lib/market-snapshot';
-import { radarRun } from '@/lib/radar-run';
 
 const chartConfig = {
   value: { label: '관측값', color: '#2f6fed' },
@@ -133,8 +131,10 @@ const assetNotes: Record<string, { role: string; watch: string }> = {
 
 export function MarketsWorkspace({
   initialSnapshot = marketSnapshot,
+  radarCount,
 }: {
   initialSnapshot?: MarketSnapshot;
+  radarCount: number;
 }) {
   const [snapshot, setSnapshot] = useState<MarketSnapshot>(initialSnapshot);
   const [selectedKey, setSelectedKey] = useState(snapshot.assets[0]?.key ?? '');
@@ -214,7 +214,7 @@ export function MarketsWorkspace({
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
       <div className="mx-auto grid h-full max-w-[1800px] grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)]">
-        <MarketsNav snapshot={snapshot} />
+        <MarketsNav snapshot={snapshot} radarCount={radarCount} />
         <main className="flex min-w-0 flex-col overflow-hidden">
           <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-white/90 px-5 backdrop-blur-xl">
             <Link
@@ -292,7 +292,13 @@ export function MarketsWorkspace({
   );
 }
 
-function MarketsNav({ snapshot }: { snapshot: MarketSnapshot }) {
+function MarketsNav({
+  snapshot,
+  radarCount,
+}: {
+  snapshot: MarketSnapshot;
+  radarCount: number;
+}) {
   return (
     <aside className="hidden h-full flex-col border-r border-sidebar-border bg-sidebar px-4 py-5 md:flex">
       <div className="flex items-center gap-3 px-2 pb-7">
@@ -308,18 +314,7 @@ function MarketsNav({ snapshot }: { snapshot: MarketSnapshot }) {
           </p>
         </div>
       </div>
-      <nav className="space-y-1">
-        <NavLink href="/markets" icon={LineChartIcon} label="Markets" active />
-        <NavLink
-          href="/radar"
-          icon={Radar}
-          label="Radar"
-          trailing={String(radarRun.summary.candidate_unique_count)}
-        />
-        <NavLink href="/watchlist" icon={Star} label="관심종목" />
-        <NavLink href="/compare" icon={GitCompareArrows} label="기업 비교" />
-        <NavLink href="/learning" icon={BookOpen} label="Learning" />
-      </nav>
+      <PrimaryNavigation active={'markets'} radarCount={radarCount} />
       <div className="mt-auto space-y-2">
         <MobileSyncControls />
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5">
@@ -365,18 +360,25 @@ function MobileSyncControls() {
         ok?: boolean;
         error?: string;
         pulled?: { imported_count: number; skipped_count: number } | null;
-        published?: { watchlist_count: number; generated_at: string };
+        published?: {
+          watchlist_count: number;
+          generated_at: string;
+          radar_count: number;
+          radar_as_of: string;
+        };
       };
       if (!response.ok || !result.ok || !result.published)
         throw new Error(result.error || '모바일 작업을 완료하지 못했습니다.');
       setMessage(
         action === 'sync'
           ? `메모 ${result.pulled?.imported_count ?? 0}개 반영 · ${result.published.watchlist_count}개 게시`
-          : `관심종목 ${result.published.watchlist_count}개 게시 완료`,
+          : `Radar ${result.published.radar_count}개 (${result.published.radar_as_of}) · 관심종목 ${result.published.watchlist_count}개 게시`,
       );
     } catch (error) {
       setFailed(true);
-      setMessage(error instanceof Error ? error.message : '모바일 작업에 실패했습니다.');
+      setMessage(
+        error instanceof Error ? error.message : '모바일 작업에 실패했습니다.',
+      );
     } finally {
       setRunning(null);
     }
@@ -1236,33 +1238,5 @@ function StatusBadge({ status }: { status: MarketAsset['freshness'] }) {
     >
       {status === 'latest' ? '최신' : status === 'stale' ? '지연' : '누락'}
     </Badge>
-  );
-}
-function NavLink({
-  href,
-  icon: Icon,
-  label,
-  active,
-  trailing,
-}: {
-  href: string;
-  icon: typeof Radar;
-  label: string;
-  active?: boolean;
-  trailing?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${active ? 'bg-primary/[0.08] text-primary' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
-    >
-      <Icon className="size-[17px]" />
-      <span>{label}</span>
-      {trailing ? (
-        <span className="ml-auto rounded-md bg-white px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm">
-          {trailing}
-        </span>
-      ) : null}
-    </Link>
   );
 }

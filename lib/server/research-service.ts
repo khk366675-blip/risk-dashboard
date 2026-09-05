@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { completePreviewPrices } from './price-history.ts';
 import type { Lens, RadarCandidate, RadarRun } from '../radar-run.ts';
 import type { StockDetail } from '../stock-detail.ts';
 import type { ListedStock } from './listing-store.ts';
@@ -25,26 +26,36 @@ export async function readPreview(
   const candidate = radar.candidates.find((row) => row.code === code);
   if (!candidate) return null;
   for (const directory of [researchConfig.preview_dir, 'public/data/stocks']) {
+    const previewDirectory = path.resolve(
+      /* turbopackIgnore: true */ process.cwd(),
+      directory,
+    );
     try {
       const stock = JSON.parse(
-        await readFile(
-          path.join(process.cwd(), directory, `${code}.json`),
-          'utf8',
-        ),
+        await readFile(path.join(previewDirectory, `${code}.json`), 'utf8'),
       ) as StockDetail;
       if (stock.run_id && stock.run_id !== radar.run_id) continue;
+      // Older previews retained only 65 sessions. Recover the matching full local
+      // price snapshot without running any external collector.
+      const prices = completePreviewPrices(
+        stock,
+        path.join(process.cwd(), 'data/market/radar_market.db'),
+      );
       return {
         ...stock,
         data_level: 'preview',
         quarters: [],
         events: [],
-        prices: stock.prices.slice(-65),
+        prices,
         radar: candidate,
         warnings: [
           'Radar 기본 자료입니다. 관심종목으로 등록하면 상세 재무·공시를 보강합니다.',
         ],
         source_status: {
-          prices: stock.source_status.prices,
+          prices: {
+            ...stock.source_status.prices,
+            record_count: prices.length,
+          },
           financials: {
             ...stock.source_status.financials,
             status: 'partial',

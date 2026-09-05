@@ -5,13 +5,15 @@ import {
   ArchiveRestore,
   Plus,
   Save,
-  X,
   NotebookPen,
   Sparkles,
   Link2,
   ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useLocalDraft } from '@/components/draft-recovery';
+import { ThesisVersions } from '@/components/thesis-versions';
+import { ThesisQuestions } from '@/components/thesis-questions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,6 +81,8 @@ export function ThesisWorkspace({
   preferredPointId,
   onRequestAi,
   onRequestEvidence,
+  preferredCheckId,
+  onQuestionMode,
 }: {
   code: string;
   onDirty: (dirty: boolean) => void;
@@ -88,7 +92,16 @@ export function ThesisWorkspace({
   preferredPointId?: string;
   onRequestAi: () => void;
   onRequestEvidence: () => void;
+  preferredCheckId?: string;
+  onQuestionMode: (active: boolean) => void;
 }) {
+  const [section, setSection] = useState<'point' | 'questions'>(
+    preferredCheckId ? 'questions' : 'point',
+  );
+  useEffect(() => {
+    onQuestionMode(section === 'questions');
+    return () => onQuestionMode(false);
+  }, [section, onQuestionMode]);
   const [items, setItems] = useState<InvestmentThesis[]>([]);
   const [selected, setSelected] = useState<InvestmentThesis | null>(null);
   const [draft, setDraft] = useState<ThesisContent>(emptyThesis);
@@ -101,6 +114,12 @@ export function ThesisWorkspace({
   const dirty =
     JSON.stringify(draft) !==
     JSON.stringify(selected?.content ?? emptyThesis());
+  const recovery = useLocalDraft(
+    `thesis:${code}:${selected?.id ?? 'new'}`,
+    draft,
+    loaded && dirty,
+    setDraft,
+  );
   useEffect(() => {
     onDirty(dirty || busy);
     return () => onDirty(false);
@@ -204,6 +223,7 @@ export function ThesisWorkspace({
       );
       const body = await responseJson(response);
       const saved = body.item as InvestmentThesis;
+      recovery.clear();
       select(saved);
       setNotice(
         archive === undefined
@@ -227,18 +247,25 @@ export function ThesisWorkspace({
     selected && current && selected.revision !== current.revision;
   const displayed = items.filter((i) => i.archived === archived);
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card">
+    <div className="@container flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card">
+      {recovery.banner}
       <div className="shrink-0 border-b px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <NotebookPen className="size-4 text-primary" />내 투자포인트
             </h2>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              발견 이유를 넘어, 이 기업을 계속 검토할 나의 가설
-            </p>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
+            {selected && (
+              <ThesisVersions
+                item={selected}
+                onRestore={async (content) => {
+                  if (!dirty || (await confirmDiscard(discardThesisMessage)))
+                    setDraft(content);
+                }}
+              />
+            )}
             <ThesisEvidenceLauncher
               key={selected?.id ?? 'empty'}
               item={selected}
@@ -251,7 +278,7 @@ export function ThesisWorkspace({
               onClick={onRequestAi}
             >
               <Sparkles />
-              AI 질문
+              AI 질문 제안
             </Button>
             <Button
               size="sm"
@@ -269,6 +296,7 @@ export function ThesisWorkspace({
                 )
                   return;
                 setArchived(false);
+                setSection('point');
                 select(null);
                 setError(null);
               }}
@@ -277,25 +305,24 @@ export function ThesisWorkspace({
             </Button>
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-[10px]">
-          <Button
-            size="xs"
-            variant={archived ? 'ghost' : 'secondary'}
-            onClick={() => setArchived(false)}
-          >
-            작성한 포인트 {items.filter((i) => !i.archived).length}
-          </Button>
-          <Button
-            size="xs"
-            variant={archived ? 'secondary' : 'ghost'}
-            onClick={() => setArchived(true)}
-          >
-            보관함 {items.filter((i) => i.archived).length}
-          </Button>
-          <span className="ml-auto text-muted-foreground">
-            저장만으로 AI 전송 안 함
-          </span>
-        </div>
+        {items.some((item) => item.archived) && (
+          <div className="mt-3 flex items-center gap-2 text-[10px]">
+            <Button
+              size="xs"
+              variant={archived ? 'ghost' : 'secondary'}
+              onClick={() => setArchived(false)}
+            >
+              작성한 포인트 {items.filter((i) => !i.archived).length}
+            </Button>
+            <Button
+              size="xs"
+              variant={archived ? 'secondary' : 'ghost'}
+              onClick={() => setArchived(true)}
+            >
+              보관함 {items.filter((i) => i.archived).length}
+            </Button>
+          </div>
+        )}
         <div
           className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto"
           aria-label="투자포인트 목록"
@@ -322,8 +349,39 @@ export function ThesisWorkspace({
             </span>
           )}
         </div>
+        <div
+          className="mt-3 flex gap-2"
+          role="tablist"
+          aria-label="투자포인트 작성과 검증"
+        >
+          <Button
+            size="sm"
+            role="tab"
+            aria-selected={section === 'point'}
+            aria-controls="thesis-section"
+            variant={section === 'point' ? 'secondary' : 'ghost'}
+            onClick={() => setSection('point')}
+          >
+            투자포인트 작성
+          </Button>
+          <Button
+            size="sm"
+            role="tab"
+            aria-selected={section === 'questions'}
+            aria-controls="thesis-section"
+            variant={section === 'questions' ? 'secondary' : 'ghost'}
+            onClick={() => setSection('questions')}
+          >
+            검증 질문 {draft.checks.length}
+          </Button>
+        </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <div
+        id="thesis-section"
+        role="tabpanel"
+        aria-label={section === 'point' ? '투자포인트 작성' : '검증 질문'}
+        className={`min-h-0 flex-1 px-4 py-3 ${section === 'questions' ? 'flex flex-col gap-3 overflow-hidden' : 'space-y-4 overflow-y-auto'}`}
+      >
         {error && (
           <div
             role="alert"
@@ -374,169 +432,113 @@ export function ThesisWorkspace({
         ) : (
           <fieldset
             disabled={busy || Boolean(selected?.archived)}
-            className="min-w-0 space-y-4 disabled:opacity-70"
+            className={`min-w-0 disabled:opacity-70 ${section === 'questions' ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-4'}`}
           >
             {selected?.archived && (
               <p className="rounded-lg bg-muted p-2 text-[11px]">
                 보관된 포인트입니다. 복구하면 다시 편집할 수 있습니다.
               </p>
             )}
-            <label
-              className="block space-y-1.5 text-[11px]"
-              htmlFor="thesis-title"
-            >
-              <span>
-                짧은 제목 <span className="text-muted-foreground">· 선택</span>
-              </span>
-              <Input
-                id="thesis-title"
-                value={draft.title}
-                onChange={(e) => patch({ title: e.target.value })}
-                placeholder="예: 신규 사업의 수익화"
-              />
-            </label>
-            <label
-              className="block space-y-1.5 text-[11px]"
-              htmlFor="thesis-body"
-            >
-              <span className="font-medium">내 투자포인트</span>
-              <Textarea
-                id="thesis-body"
-                rows={5}
-                className="min-h-32 resize-y text-sm leading-6"
-                value={draft.body}
-                onChange={(e) => patch({ body: e.target.value })}
-                placeholder="이 기업을 관심 있게 보는 이유를 자유롭게 적어주세요. 아직 확인되지 않은 기대나 가정도 괜찮습니다."
-              />
-              <span
-                className={`block text-right text-[10px] ${draft.body.length > thesisConfig.max_body_chars ? 'text-destructive' : 'text-muted-foreground'}`}
-              >
-                {draft.body.length.toLocaleString()} /{' '}
-                {thesisConfig.max_body_chars.toLocaleString()}자
-              </span>
-            </label>
-            <details className="rounded-xl border p-3">
-              <summary className="cursor-pointer text-xs font-medium">
-                예상 시기 · 반증 조건 · 원문 링크{' '}
-                <span className="font-normal text-muted-foreground">선택</span>
-              </summary>
-              <div className="mt-3 space-y-3">
+            {section === 'point' && (
+              <>
                 <label
                   className="block space-y-1.5 text-[11px]"
-                  htmlFor="thesis-timing"
+                  htmlFor="thesis-title"
                 >
-                  <span>예상 확인 시기</span>
+                  <span>
+                    짧은 제목{' '}
+                    <span className="text-muted-foreground">· 선택</span>
+                  </span>
                   <Input
-                    id="thesis-timing"
-                    value={draft.timing}
-                    onChange={(e) => patch({ timing: e.target.value })}
-                    placeholder="예: 다음 분기 실적 발표 때 / 미정"
+                    id="thesis-title"
+                    value={draft.title}
+                    onChange={(e) => patch({ title: e.target.value })}
+                    placeholder="예: 신규 사업의 수익화"
                   />
                 </label>
                 <label
                   className="block space-y-1.5 text-[11px]"
-                  htmlFor="thesis-weakens"
+                  htmlFor="thesis-body"
                 >
-                  <span>기대가 약해지는 조건</span>
+                  <span className="font-medium">내 투자포인트</span>
                   <Textarea
-                    id="thesis-weakens"
-                    value={draft.weakens}
-                    onChange={(e) => patch({ weakens: e.target.value })}
-                    placeholder="어떤 사실이 확인되면 이 가설을 다시 생각할까요?"
+                    id="thesis-body"
+                    rows={5}
+                    className="min-h-32 resize-y text-sm leading-6"
+                    value={draft.body}
+                    onChange={(e) => patch({ body: e.target.value })}
+                    placeholder="이 기업을 관심 있게 보는 이유를 자유롭게 적어주세요. 아직 확인되지 않은 기대나 가정도 괜찮습니다."
                   />
-                </label>
-                <label
-                  className="block space-y-1.5 text-[11px]"
-                  htmlFor="thesis-source"
-                >
-                  <span>관련 원문 링크</span>
-                  <Input
-                    id="thesis-source"
-                    value={draft.source_url}
-                    onChange={(e) => patch({ source_url: e.target.value })}
-                    placeholder="https://…"
-                  />
-                  <span className="text-[10px] text-muted-foreground">
-                    링크만 저장하며 본문을 자동 수집하거나 AI로 전송하지
-                    않습니다.
+                  <span
+                    className={`block text-right text-[10px] ${draft.body.length > thesisConfig.max_body_chars ? 'text-destructive' : 'text-muted-foreground'}`}
+                  >
+                    {draft.body.length.toLocaleString()} /{' '}
+                    {thesisConfig.max_body_chars.toLocaleString()}자
                   </span>
                 </label>
-              </div>
-            </details>
-            <section>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-xs font-semibold">
-                  내 검증 항목{' '}
-                  <span className="font-normal text-muted-foreground">
-                    {draft.checks.length}/{thesisConfig.max_checks}
-                  </span>
-                </h3>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  disabled={
-                    draft.checks.length >= thesisConfig.max_checks ||
-                    busy ||
-                    Boolean(selected?.archived)
-                  }
-                  onClick={() =>
-                    patch({
-                      checks: [
-                        ...draft.checks,
-                        { id: crypto.randomUUID(), text: '' },
-                      ],
-                    })
-                  }
-                >
-                  <Plus />
-                  항목 추가
-                </Button>
-              </div>
-              {!draft.checks.length && (
-                <p className="rounded-xl border border-dashed p-3 text-[11px] leading-5 text-muted-foreground">
-                  이 가설을 확인하려면 무엇을 봐야 할까요? 직접 질문을
-                  적어두세요. AI 질문 패널에서 제안을 선택·수정해 추가할 수도
-                  있습니다.
-                </p>
-              )}
-              <div className="space-y-2">
-                {draft.checks.map((check, index) => (
-                  <div key={check.id} className="flex items-start gap-2">
-                    <span className="pt-2 text-[10px] text-muted-foreground">
-                      {index + 1}
+                <details className="rounded-xl border p-3">
+                  <summary className="cursor-pointer text-xs font-medium">
+                    예상 시기 · 반증 조건 · 원문 링크{' '}
+                    <span className="font-normal text-muted-foreground">
+                      선택
                     </span>
-                    <Textarea
-                      aria-label={`검증 항목 ${index + 1}`}
-                      rows={2}
-                      value={check.text}
-                      onChange={(e) =>
-                        patch({
-                          checks: draft.checks.map((c) =>
-                            c.id === check.id
-                              ? { ...c, text: e.target.value }
-                              : c,
-                          ),
-                        })
-                      }
-                      placeholder="자료에서 직접 확인할 질문"
-                      className="min-h-16 flex-1 text-xs"
-                    />
-                    <Button
-                      size="icon-xs"
-                      variant="ghost"
-                      aria-label={`검증 항목 ${index + 1} 제거`}
-                      onClick={() =>
-                        patch({
-                          checks: draft.checks.filter((c) => c.id !== check.id),
-                        })
-                      }
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    <label
+                      className="block space-y-1.5 text-[11px]"
+                      htmlFor="thesis-timing"
                     >
-                      <X />
-                    </Button>
+                      <span>예상 확인 시기</span>
+                      <Input
+                        id="thesis-timing"
+                        value={draft.timing}
+                        onChange={(e) => patch({ timing: e.target.value })}
+                        placeholder="예: 다음 분기 실적 발표 때 / 미정"
+                      />
+                    </label>
+                    <label
+                      className="block space-y-1.5 text-[11px]"
+                      htmlFor="thesis-weakens"
+                    >
+                      <span>기대가 약해지는 조건</span>
+                      <Textarea
+                        id="thesis-weakens"
+                        value={draft.weakens}
+                        onChange={(e) => patch({ weakens: e.target.value })}
+                        placeholder="어떤 사실이 확인되면 이 가설을 다시 생각할까요?"
+                      />
+                    </label>
+                    <label
+                      className="block space-y-1.5 text-[11px]"
+                      htmlFor="thesis-source"
+                    >
+                      <span>관련 원문 링크</span>
+                      <Input
+                        id="thesis-source"
+                        value={draft.source_url}
+                        onChange={(e) => patch({ source_url: e.target.value })}
+                        placeholder="https://…"
+                      />
+                      <span className="text-[10px] text-muted-foreground">
+                        링크만 저장하며 본문을 자동 수집하거나 AI로 전송하지
+                        않습니다.
+                      </span>
+                    </label>
                   </div>
-                ))}
-              </div>
-            </section>
+                </details>
+              </>
+            )}
+            {section === 'questions' && (
+              <ThesisQuestions
+                key={selected?.id ?? 'new'}
+                checks={draft.checks}
+                onChange={(checks) => patch({ checks })}
+                thesis={selected}
+                dirty={dirty}
+                onRequestEvidence={onRequestEvidence}
+                preferredCheckId={preferredCheckId}
+              />
+            )}
           </fieldset>
         )}
       </div>
@@ -638,8 +640,9 @@ function ThesisEvidenceLauncher({
   useEffect(() => {
     if (!item) return;
     const handleEvidenceChange = (event: Event) => {
-      const detail = (event as CustomEvent<{ code?: string; thesisId?: string }>)
-        .detail;
+      const detail = (
+        event as CustomEvent<{ code?: string; thesisId?: string }>
+      ).detail;
       if (detail?.code !== item.code || detail?.thesisId !== item.id) return;
       void load().catch(() => setError(true));
     };
@@ -690,8 +693,12 @@ export function ThesisContextPanel({
             : 'Radar 선정 조건과 별개로, 이 기업을 계속 살펴볼 이유를 기록합니다.'}
         </p>
       </div>
+      {item && <EvidenceLinksPanel item={item} />}
       {item && (
-        <section className="space-y-3 rounded-xl border p-3">
+        <details className="space-y-3 rounded-xl border p-3">
+          <summary className="cursor-pointer text-xs font-semibold">
+            저장한 가설 · 질문 보기
+          </summary>
           <h4 className="text-xs font-semibold">
             저장한 가설 {item.archived ? '· 보관 중' : ''}
           </h4>
@@ -719,17 +726,8 @@ export function ThesisContextPanel({
               </p>
             )}
           </div>
-        </section>
+        </details>
       )}
-      {item && <EvidenceLinksPanel item={item} />}
-      <section className="rounded-xl border bg-muted/30 p-3">
-        <h4 className="text-xs font-semibold">AI 질문 제안</h4>
-        <p className="mt-2 text-[11px] leading-6 text-muted-foreground">
-          AI 질문 탭에서 저장한 글을 확인하고 명시적으로 전송하면, 성립
-          조건·반증·필요한 자료를 묻는 질문을 제안합니다. 채택할 질문은 직접
-          선택합니다.
-        </p>
-      </section>
       {item?.content.source_url && (
         <section className="rounded-xl border p-3">
           <h4 className="text-xs font-semibold">직접 연결한 원문</h4>
@@ -746,14 +744,6 @@ export function ThesisContextPanel({
           </p>
         </section>
       )}
-      <section>
-        <h4 className="text-xs font-semibold">다음 검토</h4>
-        <p className="mt-2 text-[11px] leading-6 text-muted-foreground">
-          공시 원문 탭의 근거 찾기와 변화 대조에서 문단·표를 확인하고 현재
-          투자포인트에 연결할 수 있습니다. 외부 자료는 위 `자료 직접 추가`로
-          기록하세요.
-        </p>
-      </section>
       <p className="border-t pt-3 text-[10px] leading-5 text-muted-foreground">
         개인 글은 로컬에 저장되며, AI 요청 전에는 외부로 전송되지 않습니다.
       </p>

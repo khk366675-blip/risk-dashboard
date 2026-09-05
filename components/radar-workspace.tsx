@@ -1,26 +1,22 @@
 'use client';
+import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
 import { createContext, useContext, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  BookOpen,
   ChevronDown,
   ChevronRight,
   Database,
   ExternalLink,
   FileSearch,
   Info,
-  GitCompareArrows,
-  LineChart,
   Menu,
-  Radar,
   RefreshCw,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
-  Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +51,7 @@ export default function RadarWorkspace({
 }) {
   const [radarRun, setRadarRun] = useState<RadarRun>(currentRadarRun);
   const [selectedLens, setSelectedLens] = useState<Lens | 'all'>('all');
+  const [eventType, setEventType] = useState('all');
   const [selectedCode, setSelectedCode] = useState(
     radarRun.candidates[0]?.code ?? '',
   );
@@ -77,9 +74,20 @@ export default function RadarWorkspace({
         `${candidate.name} ${candidate.code} ${candidate.market}`
           .toLocaleLowerCase('ko-KR')
           .includes(query);
-      return matchesLens && matchesQuery;
+      const eventLabels = candidate.lenses.event.evidence
+        .map((item) => item.label)
+        .join(' ');
+      const matchesEvent =
+        selectedLens !== 'event' ||
+        eventType === 'all' ||
+        (eventType === 'financing'
+          ? /자금조달|희석/.test(eventLabels)
+          : eventType === 'contract'
+            ? /공급계약|수주/.test(eventLabels)
+            : /자사주|자기주식/.test(eventLabels));
+      return matchesLens && matchesQuery && matchesEvent;
     });
-  }, [radarRun.candidates, searchQuery, selectedLens]);
+  }, [radarRun.candidates, searchQuery, selectedLens, eventType]);
 
   const selectedCandidate =
     filteredCandidates.find((candidate) => candidate.code === selectedCode) ??
@@ -188,6 +196,24 @@ export default function RadarWorkspace({
               </div>
 
               <RunStrip />
+              {selectedLens === 'event' && (
+                <label className="flex items-center gap-2 text-xs">
+                  공시 유형
+                  <select
+                    className="rounded-lg border bg-white px-3 py-1.5"
+                    value={eventType}
+                    onChange={(e) => setEventType(e.target.value)}
+                  >
+                    <option value="all">전체</option>
+                    <option value="contract">공급계약·수주</option>
+                    <option value="buyback">자기주식</option>
+                    <option value="financing">자금조달·희석</option>
+                  </select>
+                  <span className="text-muted-foreground">
+                    {filteredCandidates.length}개 종목 · 공시 분류 기준
+                  </span>
+                </label>
+              )}
 
               <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto md:grid-cols-[250px_minmax(440px,1fr)] xl:grid-cols-[250px_minmax(440px,1fr)_340px] xl:overflow-hidden">
                 <RadarSidebar
@@ -273,19 +299,7 @@ function GlobalSidebar({
           </p>
         </div>
       </div>
-      <nav className="space-y-1" aria-label="주요 메뉴">
-        <NavItem icon={LineChart} label="Markets" href="/markets" />
-        <NavItem
-          icon={Radar}
-          label="Radar"
-          active
-          trailing={String(candidateCount)}
-          href="/radar"
-        />
-        <NavItem icon={Star} label="관심종목" href="/watchlist" />
-        <NavItem icon={GitCompareArrows} label="기업 비교" href="/compare" />
-        <NavItem icon={BookOpen} label="Learning" href="/learning" />
-      </nav>
+      <PrimaryNavigation active={'radar'} radarCount={candidateCount} />
       <div
         className={`mt-auto rounded-2xl border p-3.5 ${radarRun.status === 'ok' ? 'border-emerald-200 bg-emerald-50/70' : 'border-amber-200 bg-amber-50/70'}`}
       >
@@ -584,7 +598,8 @@ function RadarMap({
             </Badge>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            통과 조건의 실제 값과 기준을 표시하며 렌즈 간 점수로 합산하지 않습니다.
+            통과 조건의 실제 값과 기준을 표시하며 렌즈 간 점수로 합산하지
+            않습니다.
           </p>
         </div>
       </div>
@@ -619,7 +634,8 @@ function RadarMap({
                         </span>
                       </div>
                       <p className="mt-1 text-[9px] text-muted-foreground">
-                        {candidate.market} · {lensLabel[lens]} · 기준일 {candidate.as_of}
+                        {candidate.market} · {lensLabel[lens]} · 기준일{' '}
+                        {candidate.as_of}
                       </p>
                     </div>
                     {alertCount > 0 ? (
@@ -694,7 +710,8 @@ function RadarMap({
 function formatRadarEvidenceValue(item: RadarEvidence) {
   if (typeof item.value === 'string')
     return item.value.startsWith('http') ? 'DART 원문' : item.value;
-  if (typeof item.value !== 'number' || !Number.isFinite(item.value)) return '미수집';
+  if (typeof item.value !== 'number' || !Number.isFinite(item.value))
+    return '미수집';
   const absolute = Math.abs(item.value);
   if (absolute >= 1_000_000_000_000)
     return `${(item.value / 1_000_000_000_000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}조`;
@@ -786,7 +803,9 @@ function EvidencePanel({
           <div className="mt-3 flex items-center gap-3 text-[9px] text-muted-foreground">
             <span>연결 근거 {result.evidence.length}개</span>
             <span>기준일 {candidate.as_of}</span>
-            <span>{result.band === 'strong' ? '복수 조건 통과' : '추가 검토'}</span>
+            <span>
+              {result.band === 'strong' ? '복수 조건 통과' : '추가 검토'}
+            </span>
           </div>
         </div>
 
@@ -953,9 +972,9 @@ function ConditionsSheet({
       color: lensColor.dislocation,
       items: [
         '조건 통과 종목 전체 표시',
-        '가격·가치 근거 5개 모두',
+        '독립된 가격·가치 근거 4개 모두',
         '52주 고점 대비 -40%',
-        '극단적 하락 -55%',
+        '극단적 하락 -55% 필수 (하락 중복 집계 제외)',
         '시장 대비 6개월 -35%p',
         '가격 하위 10%·가치 하위 7%',
       ],
@@ -980,7 +999,7 @@ function ConditionsSheet({
         className="w-full overflow-y-auto sm:max-w-[560px]"
       >
         <SheetHeader className="border-b px-6 py-5">
-          <SheetTitle>Radar 강화 조건</SheetTitle>
+          <SheetTitle>다음 Radar 실행 조건</SheetTitle>
           <SheetDescription>
             절대조건과 데이터 커버리지를 통과한 종목은 렌즈별 개수 상한 없이
             모두 표시합니다.
@@ -1202,37 +1221,5 @@ function DiagnosticsSheet({
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function NavItem({
-  icon: Icon,
-  label,
-  active,
-  trailing,
-  href,
-}: {
-  icon: typeof Radar;
-  label: string;
-  active?: boolean;
-  trailing?: string;
-  href: string;
-}) {
-  const content = (
-    <>
-      <Icon className="size-[17px]" />
-      <span>{label}</span>
-      {trailing ? (
-        <span className="ml-auto rounded-md bg-white px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm">
-          {trailing}
-        </span>
-      ) : null}
-    </>
-  );
-  const className = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${active ? 'bg-primary/[0.08] text-primary' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`;
-  return (
-    <Link href={href} className={className}>
-      {content}
-    </Link>
   );
 }

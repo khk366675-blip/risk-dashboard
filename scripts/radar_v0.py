@@ -97,7 +97,7 @@ def load_quarters(connection: sqlite3.Connection, code: str) -> list[dict[str, A
         SELECT year, report_code, account_nm, thstrm_amount
         FROM financials
         WHERE code = ?
-          AND account_nm IN ('rev', 'op', 'ocf', 'equity', 'debt', 'data_quality')
+          AND account_nm IN ('rev', 'op', 'ocf', 'equity', 'debt', 'data_quality', 'statement_basis')
         """,
         (code,),
     ).fetchall()
@@ -107,8 +107,8 @@ def load_quarters(connection: sqlite3.Connection, code: str) -> list[dict[str, A
         if report_code not in QUARTER_ORDER:
             continue
         key = (int(row["year"]), report_code)
-        if row["account_nm"] == "data_quality":
-            grouped[key]["data_quality"] = row["thstrm_amount"]
+        if row["account_nm"] in ("data_quality", "statement_basis"):
+            grouped[key][row["account_nm"]] = row["thstrm_amount"]
         else:
             grouped[key][row["account_nm"]] = finite_number(row["thstrm_amount"])
     return [
@@ -235,6 +235,14 @@ def evidence(key: str, label: str, value: Any, comparison: str, period: str, sou
     }
 
 
+def comparable_quarters(quarters: list[dict[str, Any]]) -> bool:
+    if not quarters:
+        return False
+    periods = [q['year'] * 4 + int(q['quarter'][0]) for q in quarters]
+    basis = {q.get('statement_basis') for q in quarters}
+    return periods == list(range(periods[0], periods[0] + len(periods))) and len(basis) == 1 and next(iter(basis)) in {'CFS', 'OFS'}
+
+
 def quality_lens(snapshot: StockSnapshot, rules: dict[str, Any]) -> dict[str, Any]:
     config = rules["quality"]
     valuation = snapshot.valuation
@@ -259,7 +267,9 @@ def quality_lens(snapshot: StockSnapshot, rules: dict[str, Any]) -> dict[str, An
 
     recent_quarters = snapshot.quarters[-config["profitable_quarters_window"] :]
     op_quarters = [finite_number(quarter.get("op")) for quarter in recent_quarters]
-    known_op_quarters = [value for value in op_quarters if value is not None]
+    known_op_quarters = [value for value in op_quarters if value is not None] if comparable_quarters(recent_quarters) else []
+    if not comparable_quarters(recent_quarters):
+        contradictions.append('분기 연속성 또는 연결·별도 기준을 확인하지 못해 이익 지속성 근거에서 제외했습니다.')
     if known_op_quarters:
         available += 1
         profitable = sum(value > 0 for value in known_op_quarters)
@@ -347,6 +357,8 @@ def improvement_lens(snapshot: StockSnapshot, rules: dict[str, Any]) -> dict[str
     current, prior = prior_year_quarter(snapshot)
     if not current or not prior:
         return lens_result("improvement", False, [], [], 0, config["strong_evidence"], 6)
+    if current.get('statement_basis') not in {'CFS', 'OFS'} or current.get('statement_basis') != prior.get('statement_basis'):
+        return lens_result('improvement', False, [], ['전년 동기 재무 기준이 다르거나 미확인입니다.'], 0, config['strong_evidence'], 6)
 
     current_period = f"{current['year']}{current['quarter']}"
     revenue_growth = pct_change(finite_number(current.get("rev")), finite_number(prior.get("rev")))
@@ -488,7 +500,7 @@ def dislocation_lens(
         available += 1
         if drawdown <= config["drawdown_52w_max_pct"]:
             items.append(evidence("drawdown", "52주 고점 대비 가격 하락", safe_round(drawdown), f"<= {config['drawdown_52w_max_pct']}%", "최근 252거래일", "KRX 가격"))
-        if drawdown <= config["extreme_drawdown_52w_max_pct"]:
+        if config.get('independent_evidence') is not True and drawdown <= config["extreme_drawdown_52w_max_pct"]:
             items.append(evidence("extreme_drawdown", "극단적 가격 하락 구간", safe_round(drawdown), f"<= {config['extreme_drawdown_52w_max_pct']}%", "최근 252거래일", "KRX 가격"))
 
     return_6m = diagnostics["return_6m"]
@@ -505,7 +517,7 @@ def dislocation_lens(
             items.append(evidence("price_position", "120일 가격 범위 하단", safe_round(position), f"<= {config['price_position_120d_max_pct']}%", "최근 120거래일", "KRX 가격"))
 
     valuation_item = None
-    for key, label in (("per", "PER"), ("pbr", "PBR"), ("ev_ebitda", "EV/EBITDA")):
+    for key, label in (("per", "PER"), ("pbr", "PBR"), ("ev_ebitda", "EV/영업이익(근사)")):
         value = finite_number(snapshot.valuation.get(key))
         cutoff = valuation_cutoffs.get(key)
         if value is not None and value > 0 and cutoff is not None:
@@ -533,11 +545,12 @@ def dislocation_lens(
         contradictions.append("가격 데이터가 오래되어 현재 Dislocation 후보 판정을 보류했습니다.")
     matched = (
         len(items) >= config["minimum_evidence"]
+        and (not config.get('independent_evidence') or (drawdown is not None and drawdown <= config['extreme_drawdown_52w_max_pct']))
         and support
         and price_is_fresh
         and coverage >= config["minimum_coverage_pct"]
     )
-    return lens_result("dislocation", matched, items, contradictions, coverage, config["strong_evidence"], 5)
+    return lens_result("dislocation", matched, items, contradictions, coverage, config["strong_evidence"], 4 if config.get('independent_evidence') else 5)
 
 
 def lens_result(

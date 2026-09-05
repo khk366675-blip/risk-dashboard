@@ -190,6 +190,23 @@ class LocalBackupTests(unittest.TestCase):
         with self.assertRaises(BackupError):
             self.create()
 
+    def test_question_answers_and_focused_ai_input_survive_backup(self):
+        check = {'id':'check-1','text':'확인할 질문','answer':'내 답변','unresolved':'남은 질문','status':'reviewing','evidence_ids':[]}
+        content = {'title':'가설','body':'원문 가설','timing':'','weakens':'','source_url':'','checks':[check]}
+        raw = json.dumps(content, ensure_ascii=False)
+        self.db.execute('INSERT INTO investment_theses VALUES(?,?,?,?,?,?,?)', ('focus-point','000001',1,0,'now','now',raw))
+        self.db.execute('INSERT INTO investment_thesis_revisions VALUES(?,?,?,?,?)', ('focus-point',1,0,'now',raw))
+        data = {'company':{'code':'000001','name':'테스트'},'point':{'id':'focus-point','revision':1},'evidence':[], 'focus':{'id':'check-1','question':check['text'],'answer':check['answer'],'unresolved':check['unresolved']}}
+        self.db.execute('INSERT INTO ai_request_attempts VALUES(?,?,?,?,?)', ('focus-run','thesis_evidence_review',1,2,None))
+        self.db.execute("INSERT INTO thesis_evidence_ai_runs(id,thesis_id,thesis_revision,evidence_signature,model,prompt_version,input_json,created_at,state) VALUES(?,?,?,?,?,?,?,?,?)", ('focus-run','focus-point',1,'a'*64,'test-model','test-version',json.dumps(data,ensure_ascii=False),'now','pending'))
+        self.db.commit()
+        self.assertEqual(self.verify(self.create())['counts']['evidence_ai_runs'],1)
+        data['focus']['answer']='저장본과 다른 답변'
+        self.db.execute('UPDATE thesis_evidence_ai_runs SET input_json=?',(json.dumps(data),))
+        self.db.commit()
+        with self.assertRaises(BackupError):
+            self.create()
+
     def test_old_backup_without_thesis_tables_remains_restorable(self):
         self.db.executescript('DROP TABLE research_manual_evidence; DROP TABLE research_financial_evidence; DROP TABLE research_evidence; DROP TABLE thesis_ai_runs; DROP TABLE ai_request_attempts; DROP TABLE investment_thesis_revisions; DROP TABLE investment_theses;')
         file = self.create()

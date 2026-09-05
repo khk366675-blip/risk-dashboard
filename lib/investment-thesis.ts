@@ -1,7 +1,14 @@
 import config from '../research/thesis-config.json' with { type: 'json' };
 
 export const thesisConfig = config;
-export type ThesisCheck = { id: string; text: string };
+export type ThesisCheck = {
+  id: string;
+  text: string;
+  answer?: string;
+  unresolved?: string;
+  status?: 'open' | 'reviewing' | 'answered';
+  evidence_ids?: string[];
+};
 export type ThesisContent = {
   title: string;
   body: string;
@@ -94,7 +101,17 @@ export function validateThesisContent(
     if (
       !item ||
       typeof item !== 'object' ||
-      Object.keys(item).some((k) => !['id', 'text'].includes(k)) ||
+      Object.keys(item).some(
+        (k) =>
+          ![
+            'id',
+            'text',
+            'answer',
+            'unresolved',
+            'status',
+            'evidence_ids',
+          ].includes(k),
+      ) ||
       typeof item.id !== 'string' ||
       !uuidPattern.test(item.id) ||
       ids.has(item.id) ||
@@ -105,6 +122,33 @@ export function validateThesisContent(
     )
       throw new ThesisError('검증 항목의 내용·길이·식별자를 확인해 주세요.');
     ids.add(item.id);
+    for (const key of ['answer', 'unresolved']) {
+      if (
+        item[key] !== undefined &&
+        (typeof item[key] !== 'string' ||
+          item[key].includes('\0') ||
+          (!stored && item[key].length > config.max_check_answer_chars))
+      )
+        throw new ThesisError('답변과 남은 질문의 내용·길이를 확인해 주세요.');
+    }
+    if (
+      item.status !== undefined &&
+      !['open', 'reviewing', 'answered'].includes(item.status)
+    )
+      throw new ThesisError('검증 상태를 확인해 주세요.');
+    if (
+      item.evidence_ids !== undefined &&
+      (!Array.isArray(item.evidence_ids) ||
+        item.evidence_ids.length > config.max_check_evidence ||
+        new Set(item.evidence_ids).size !== item.evidence_ids.length ||
+        item.evidence_ids.some(
+          (id: unknown) =>
+            typeof id !== 'string' ||
+            !/^(document|financial|manual):[a-f0-9-]{36}$/i.test(id) ||
+            !uuidPattern.test(id.split(':')[1]),
+        ))
+    )
+      throw new ThesisError('질문에 연결한 자료 식별자를 확인해 주세요.');
   }
   // Preserve the user's original whitespace and text; no generated replacements.
   return {
@@ -113,6 +157,6 @@ export function validateThesisContent(
     timing: v.timing as string,
     weakens: v.weakens as string,
     source_url: v.source_url as string,
-    checks: v.checks.map((c) => ({ id: c.id, text: c.text })),
+    checks: v.checks.map((c) => ({ ...c })),
   };
 }

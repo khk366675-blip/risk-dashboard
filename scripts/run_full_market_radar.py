@@ -88,10 +88,14 @@ def aggregate_valuation(
     updated_at: str,
 ) -> dict[str, Any]:
     recent = latest_quarters(quarters, 4)
+    serials = [q['year'] * 4 + int(q['quarter'][0]) for q in recent]
+    comparable = (len(recent) == 4 and serials == list(range(serials[0], serials[0] + 4))
+                  and recent[0].get('statement_basis') in ('CFS', 'OFS')
+                  and len({q.get('statement_basis') for q in recent}) == 1)
 
     def total(metric: str) -> float | None:
         values = [finite(quarter.get(metric)) for quarter in recent]
-        return sum(value for value in values if value is not None) if len(values) == 4 and all(value is not None for value in values) else None
+        return sum(value for value in values if value is not None) if comparable and all(value is not None for value in values) else None
 
     ttm_rev = total("rev")
     ttm_op = total("op")
@@ -195,6 +199,7 @@ def store_snapshot(
                     if value is not None:
                         financial_rows.append((code, quarter["year"], quarter["quarter"], metric, str(value), None, None))
                 financial_rows.append((code, quarter["year"], quarter["quarter"], "data_quality", quarter.get("data_quality", "partial"), None, None))
+                financial_rows.append((code, quarter["year"], quarter["quarter"], "statement_basis", quarter.get("statement_basis"), None, None))
             valuation = aggregate_valuation(market_cap, quarters, generated_at)
             valuation_rows.append(
                 (
@@ -238,6 +243,9 @@ def merge_enrichment(
             if key not in quarter_map:
                 continue
             quarter = quarter_map[key]
+            if quarter.get('statement_basis') != values.get('statement_basis'):
+                quarter['data_quality'] = 'partial'
+                continue
             for source_key, target_key in (("ocf", "ocf"), ("interest", "interest_exp"), ("cash", "cash"), ("fin_debt", "fin_debt")):
                 if values.get(source_key) is not None:
                     quarter[target_key] = values[source_key]

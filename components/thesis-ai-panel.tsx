@@ -202,7 +202,7 @@ export function ThesisAiPanel({
         <p className="text-[10px] font-medium text-primary">
           내 가설 → 확인할 질문
         </p>
-        <h3 className="mt-2 text-sm font-semibold">AI 검증 질문</h3>
+        <h3 className="mt-2 text-sm font-semibold">AI 질문 제안</h3>
         <p className="mt-2 text-[11px] leading-6 text-muted-foreground">
           선택한 글의 성립 조건·반증·필요한 자료를 제안합니다. 기업 사실
           확인이나 공시 본문 분석은 아닙니다.
@@ -355,7 +355,7 @@ export function ThesisAiPanel({
                     setSelectionOpen(true);
                   }}
                 >
-                  질문 선택·수정 후 채택
+                  검증 질문에 추가
                 </Button>
               )}
             </>
@@ -475,8 +475,8 @@ export function ThesisAiPanel({
           <DialogHeader>
             <DialogTitle>검증할 질문 선택·수정</DialogTitle>
             <DialogDescription>
-              선택한 질문만 내 검증 항목에 추가합니다. 본문은 바꾸지 않으며,
-              채택이 AI 해석에 동의하거나 가설을 입증했다는 뜻은 아닙니다.
+              선택한 질문을 검증 질문 탭에 저장합니다. 답변과 근거는 그곳에서
+              기록할 수 있습니다.
             </DialogDescription>
           </DialogHeader>
           {choices.map((choice, index) => (

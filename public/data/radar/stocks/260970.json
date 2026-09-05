@@ -7,9 +7,9 @@
   "sector": "우량기업부",
   "industry": "기타 식품 제조업",
   "listing_date": "2021-09-29 00:00:00",
-  "run_id": "full_market_20260904_224330",
-  "generated_at": "2026-09-04T22:49:37.477612+09:00",
-  "collected_at": "2026-09-04T22:43:30+09:00",
+  "run_id": "full_market_20260905_105541",
+  "generated_at": "2026-09-05T11:09:37.156844+09:00",
+  "collected_at": "2026-09-05T10:55:41+09:00",
   "summary": {
     "latest_price": 54000,
     "price_as_of": "2026-09-04",
@@ -698,7 +698,7 @@
     },
     "contradictions": [],
     "warnings": [],
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "latest_price_date": "2026-09-04",
     "freshness": "latest"
   },
@@ -708,7 +708,7 @@
       "source": "네이버 금융 일별 시세",
       "as_of": "2026-09-04",
       "record_count": 65,
-      "collected_at": "2026-09-04T22:43:30+09:00"
+      "collected_at": "2026-09-05T10:55:41+09:00"
     },
     "financials": {
       "status": "partial",

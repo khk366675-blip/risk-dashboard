@@ -1,6 +1,6 @@
 {
   "schema_version": "radar-rules.v1",
-  "rule_version": "2026-09-04.v7",
+  "rule_version": "2026-09-05.v8",
   "common": {
     "market_cap_min_krw": 30000000000,
     "median_traded_value_days": 20,
@@ -39,8 +39,9 @@
     "debt_ratio_improvement_min_pp": 35
   },
   "dislocation": {
-    "minimum_evidence": 5,
-    "strong_evidence": 5,
+    "independent_evidence": true,
+    "minimum_evidence": 4,
+    "strong_evidence": 4,
     "minimum_coverage_pct": 90,
     "drawdown_52w_max_pct": -40,
     "extreme_drawdown_52w_max_pct": -55,
@@ -54,7 +55,11 @@
     "risk_event_days": 2,
     "attention_event_days": 2,
     "strong_evidence": 2,
-    "material_importance_hints": ["positive_contract", "buyback", "dilution_risk"],
+    "material_importance_hints": [
+      "positive_contract",
+      "buyback",
+      "dilution_risk"
+    ],
     "risk_importance_hints": ["dilution_risk"],
     "attention_traded_value_multiple": 8.0,
     "attention_traded_value_min_krw": 75000000000

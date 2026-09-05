@@ -1,17 +1,12 @@
 import { localStore } from './research-store';
 import { ThesisStore } from './thesis-store';
 import { thesisConfig, ThesisError } from '../investment-thesis';
+import { isLocalDashboardRequest } from './local-request';
 
 export const thesisJson = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 export function thesisRequest(request: Request, code: string, write = false) {
-  const url = new URL(request.url);
-  if (
-    process.env.VERCEL ||
-    !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
-    request.headers.get('sec-fetch-site') === 'cross-site' ||
-    (write && request.headers.get('origin') !== url.origin)
-  )
+  if (!isLocalDashboardRequest(request, write))
     throw new ThesisError('이 PC의 로컬 대시보드에서 요청해 주세요.', 403);
   if (!/^\d{6}$/.test(code)) throw new ThesisError('종목코드를 확인해 주세요.');
 }
