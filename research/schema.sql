@@ -1,3 +1,24 @@
+CREATE TABLE IF NOT EXISTS dashboard_jobs (
+ id TEXT PRIMARY KEY, kind TEXT NOT NULL CHECK(kind IN ('markets','radar')),
+ state TEXT NOT NULL CHECK(state IN ('queued','running','completed','partial','error')),
+ step TEXT NOT NULL, started_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ finished_at TEXT, error TEXT, pid INTEGER
+);
+CREATE TABLE IF NOT EXISTS comparison_sets (
+ id TEXT PRIMARY KEY, title TEXT NOT NULL, reason TEXT NOT NULL, codes_json TEXT NOT NULL,
+ created_at TEXT NOT NULL, updated_at TEXT NOT NULL, archived_at TEXT
+);
+CREATE TABLE IF NOT EXISTS pdf_documents (
+ id TEXT PRIMARY KEY,code TEXT NOT NULL REFERENCES watchlist(code),title TEXT NOT NULL,
+ sha256 TEXT NOT NULL,path TEXT NOT NULL,page_count INTEGER NOT NULL,created_at TEXT NOT NULL,
+ archived_at TEXT, UNIQUE(code,sha256)
+);
+CREATE TABLE IF NOT EXISTS pdf_annotations (
+ id TEXT PRIMARY KEY, document_id TEXT NOT NULL REFERENCES pdf_documents(id),
+ manual_id TEXT NOT NULL REFERENCES research_manual_evidence(id), page INTEGER NOT NULL,
+ rectangles_json TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS dashboard_jobs_active ON dashboard_jobs(kind) WHERE state IN ('queued','running');
 CREATE TABLE IF NOT EXISTS watchlist (
   code TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -177,6 +198,12 @@ CREATE TABLE IF NOT EXISTS research_manual_evidence (
 );
 CREATE INDEX IF NOT EXISTS research_manual_evidence_thesis ON research_manual_evidence(thesis_id,archived_at,created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS research_manual_evidence_active_snapshot ON research_manual_evidence(thesis_id,snapshot_hash) WHERE archived_at IS NULL;
+
+-- Optional structured memo; legacy plain text and its hashes remain unchanged.
+CREATE TABLE IF NOT EXISTS research_manual_documents (
+  manual_id TEXT PRIMARY KEY REFERENCES research_manual_evidence(id),
+  document_json TEXT NOT NULL
+);
 
 -- Per-item review state for the derived update inbox. Source data remains in its
 -- collector-owned tables/files; this stores only the user's review decision.

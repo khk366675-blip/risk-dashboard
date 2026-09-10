@@ -3,7 +3,7 @@ import json
 import sqlite3
 from datetime import datetime
 from radar_pipeline import config
-from scripts.export_stock_details import finite, price_rows, ratio_percent, write_json
+from scripts.export_stock_details import finite, price_rows, ratio_percent, write_json, valuation_methodology
 
 SETTINGS = json.loads((config.ROOT / 'research/config.json').read_text(encoding='utf-8'))
 
@@ -29,7 +29,8 @@ def export_radar_previews(radar_payload=None, database_path=config.DATABASE_PATH
                 'run_id': radar_payload['run_id'], 'generated_at': datetime.now().astimezone().isoformat(), 'collected_at': radar_payload['generated_at'],
                 'summary': {'latest_price': latest.get('close'), 'price_as_of': latest.get('date'), 'market_cap_krw': candidate.get('market_cap_krw'),
                     'change_1d_pct': (latest['close']/prior-1)*100 if prior else None, 'high_52w': None, 'low_52w': None, 'drawdown_52w_pct': None, 'price_position_52w_pct': None},
-                'valuation': {'per': finite(values.get('per')), 'pbr': finite(values.get('pbr')), 'ev_ebitda': None, 'ev_operating_profit': None,
+                'radar_valuation_basis': valuation_methodology(connection),
+                'valuation': {**valuation_methodology(connection),'per': finite(values.get('per')), 'pbr': finite(values.get('pbr')), 'ev_ebitda': None, 'ev_operating_profit': None,
                     'ttm_roe_pct': ratio_percent(values.get('ttm_roe')), 'debt_ratio_pct': ratio_percent(values.get('debt_ratio')), 'interest_coverage': None,
                     'ttm_revenue': finite(values.get('ttm_rev')), 'ttm_operating_profit': finite(values.get('ttm_op')), 'ttm_net_income': finite(values.get('ttm_ni')), 'ttm_operating_cash_flow': None},
                 'prices': prices, 'quarters': [], 'events': [], 'radar': candidate,

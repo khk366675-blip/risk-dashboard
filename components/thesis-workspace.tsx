@@ -1,4 +1,6 @@
 'use client';
+
+import { RichMemoOpen } from '@/components/rich-memo-view';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Archive,
@@ -1257,20 +1259,29 @@ function ManualEvidenceCard({
         </span>
       </div>
       <h6 className="mt-2 break-words font-semibold">{link.title}</h6>
+      {link.document && (
+        <RichMemoOpen document={link.document} title={link.title} />
+      )}
       {link.thesis_revision !== item.revision && (
         <p className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-amber-900">
           투자포인트 수정 전 버전에서 연결 · 관계를 다시 확인하세요.
         </p>
       )}
-      {link.body && (
-        <details className="mt-2">
-          <summary className="cursor-pointer line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">
-            {link.body}
-          </summary>
-          <p className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words border-l-2 pl-2 text-muted-foreground">
-            {link.body}
-          </p>
-        </details>
+      {link.document ? (
+        <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">
+          {link.body}
+        </p>
+      ) : (
+        link.body && (
+          <details className="mt-2">
+            <summary className="cursor-pointer line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">
+              {link.body}
+            </summary>
+            <p className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words border-l-2 pl-2 text-muted-foreground">
+              {link.body}
+            </p>
+          </details>
+        )
       )}
       {link.note && (
         <p className="mt-2 whitespace-pre-wrap break-words border-t pt-2">

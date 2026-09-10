@@ -1,0 +1,13 @@
+{
+  "max_blocks": 24,
+  "max_text_chars": 6000,
+  "max_rows": 40,
+  "max_columns": 8,
+  "max_cell_chars": 300,
+  "max_images": 3,
+  "max_image_bytes": 350000,
+  "max_image_side": 1800,
+  "max_upload_bytes": 15000000,
+  "max_document_bytes": 1500000,
+  "max_request_bytes": 1700000
+}

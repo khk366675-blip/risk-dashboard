@@ -7,6 +7,7 @@ import {
 } from '@/lib/server/thesis-http';
 import { withManualEvidence } from '@/lib/server/local-manual-evidence';
 import { ThesisError } from '@/lib/investment-thesis';
+import { richMemoConfig } from '@/lib/rich-memo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export async function POST(request: Request, context: Context) {
   try {
     const { code } = await context.params;
     thesisRequest(request, code, true);
-    const body = await thesisBody(request);
+    const body = await thesisBody(request, richMemoConfig.max_request_bytes);
     onlyKeys(body, [
       'id',
       'thesis_id',
@@ -42,6 +43,7 @@ export async function POST(request: Request, context: Context) {
       'source_name',
       'published_at',
       'body',
+      'document',
       'note',
     ]);
     if (

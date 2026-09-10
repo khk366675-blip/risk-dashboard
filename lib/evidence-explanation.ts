@@ -276,7 +276,15 @@ export function buildEvidencePacket(
       ? filing
       : item.key.startsWith('attention:')
         ? attention
-        : definitions[item.key];
+        : item.key === 'interest_coverage' &&
+            stock.radar_valuation_basis?.interest_basis === 'interest'
+          ? definition(
+              '이자비용 커버리지',
+              '배',
+              '최근 네 분기 영업이익을 확인된 이자비용으로 나눈 값입니다. 금융비용 전체로 대체하지 않습니다.',
+              '주석의 이자비용 범위와 누적·단독 분기 기준을 확인하세요.',
+            )
+          : definitions[item.key];
     const url = item.key.startsWith('filing:') ? dartUrl(item.value) : null;
     if (
       !info ||

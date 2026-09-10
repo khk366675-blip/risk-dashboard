@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   readFileSync,
+  readdirSync,
   mkdtempSync,
   rmSync,
   realpathSync,
@@ -22,12 +23,10 @@ import {
 
 const config = JSON.parse(readFileSync('research/evidence-ai.json', 'utf8'));
 const radar = JSON.parse(readFileSync('public/data/radar/latest.json', 'utf8'));
-const candidate = radar.candidates.find((c) =>
-  c.matched_lenses.includes('quality'),
-);
-const preview = JSON.parse(
-  readFileSync(`public/data/radar/stocks/${candidate.code}.json`, 'utf8'),
-);
+// Latest screening may legitimately have zero Quality candidates. Use an
+// existing immutable preview for the unit fixture, not a current pass condition.
+const preview = readdirSync('public/data/radar/stocks').filter(n=>n.endsWith('.json')).map(n=>JSON.parse(readFileSync(`public/data/radar/stocks/${n}`,'utf8'))).find(stock=>stock.radar?.lenses?.quality?.matched && stock.radar.lenses.quality.evidence.length);
+assert.ok(preview, 'saved Quality evidence fixture exists');
 const now = Date.parse('2026-09-03T08:00:00Z');
 const packet = () =>
   buildEvidencePacket(structuredClone(preview), 'quality', config, now);

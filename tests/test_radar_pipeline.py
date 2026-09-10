@@ -13,7 +13,7 @@ class RadarPipelineTests(unittest.TestCase):
     def test_missing_or_mixed_basis_prior_quarter_does_not_become_zero_cashflow(self):
         periods = [ReportPeriod(2026, '11013', '1Q'), ReportPeriod(2026, '11012', '2Q')]
         def row(amount, basis='CFS'):
-            return {'fs_div': basis, 'sj_div': 'CF', 'account_id': 'ifrs-full_CashFlowsFromUsedInOperatingActivities', 'thstrm_amount': str(amount)}
+            return {'currency':'KRW', 'fs_div': basis, 'sj_div': 'CF', 'account_id': 'ifrs-full_CashFlowsFromUsedInOperatingActivities', 'thstrm_amount': str(amount)}
         missing = parse_full_enrichment({('000001', periods[1].key): [row(30)]}, periods)
         self.assertIsNone(missing['000001'][(2026, '2Q')]['ocf'])
         mixed = parse_full_enrichment({('000001', periods[0].key): [row(10, 'OFS')], ('000001', periods[1].key): [row(30)]}, periods)
@@ -94,6 +94,7 @@ class RadarPipelineTests(unittest.TestCase):
                     },
                 ]
             )
+        for record in records: record['currency'] = 'KRW'
         quarters = parse_major_quarters(records, periods)["000001"]
         fourth = next(quarter for quarter in quarters if quarter["quarter"] == "4Q")
         self.assertEqual(fourth["rev"], 25)
@@ -121,12 +122,15 @@ class RadarPipelineTests(unittest.TestCase):
                 {
                     "fs_div": "CFS",
                     "sj_div": "IS",
-                    "account_id": "ifrs-full_FinanceCosts",
-                    "account_nm": "금융비용",
+                    "account_id": "ifrs-full_InterestExpense",
+                    "account_nm": "이자비용",
                     "thstrm_amount": str(interest[period.quarter]),
                 },
             ]
+        for rows in responses.values():
+            for record in rows: record['currency'] = 'KRW'
         result = parse_full_enrichment(responses, periods)["000001"]
+
         self.assertEqual(result[(2025, "1Q")]["ocf"], 10)
         self.assertEqual(result[(2025, "2Q")]["ocf"], 8)
         self.assertEqual(result[(2025, "3Q")]["ocf"], 7)

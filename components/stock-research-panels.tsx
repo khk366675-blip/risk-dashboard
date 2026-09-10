@@ -275,10 +275,28 @@ export function OverviewPanel({
           label="시가총액"
           value={formatWon(stock.summary.market_cap_krw, true)}
         />
-        <Stat label="PER · 최근 4분기" value={formatMultiple(v.per)} />
-        <Stat label="PBR · 최근 자본" value={formatMultiple(v.pbr)} />
         <Stat
-          label="ROE · 기말 자본 기준"
+          label={
+            v.attribution_basis === 'parent'
+              ? 'PER · 지배주주'
+              : 'PER · 참고 배수'
+          }
+          value={formatMultiple(v.per)}
+        />
+        <Stat
+          label={
+            v.attribution_basis === 'parent'
+              ? 'PBR · 지배주주'
+              : 'PBR · 참고 배수'
+          }
+          value={formatMultiple(v.pbr)}
+        />
+        <Stat
+          label={
+            v.roe_basis === 'average'
+              ? 'ROE · 평균 자본 기준'
+              : 'ROE · 기말 자본 기준'
+          }
           value={displayNumber(v.ttm_roe_pct, '%')}
         />
       </div>
@@ -534,7 +552,7 @@ export function FinancialPanel({ stock }: { stock: StockDetail }) {
   );
 }
 
-function FinancialObservationLinker({
+export function FinancialObservationLinker({
   stock,
   metric,
   rows,

@@ -1,4 +1,5 @@
 'use client';
+import { FinancialExplorer } from '@/components/financial-explorer';
 import { ResearchTools } from '@/components/research-tools';
 
 import Link from 'next/link';
@@ -340,6 +341,11 @@ function Workspace({
                 variant="ghost"
                 className="hidden lg:inline-flex"
                 onClick={() => {
+                  if (activeTab === 'financials') {
+                    setEvidenceTab('sources');
+                    setDrawer('evidence');
+                    return;
+                  }
                   setRightVisible(true);
                   setEvidenceTab('sources');
                 }}
@@ -353,7 +359,11 @@ function Workspace({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                className="hidden lg:inline-flex"
+                className={
+                  activeTab === 'financials'
+                    ? 'hidden'
+                    : 'hidden lg:inline-flex'
+                }
                 aria-label={
                   rightVisible ? '근거 패널 접기' : '근거 패널 펼치기'
                 }
@@ -513,7 +523,19 @@ function Workspace({
               value="documents"
               className="h-full min-h-0 overflow-hidden"
             >
-              {research.item && <FilingDocumentWorkspace code={stock.code} />}
+              {research.item && (
+                <div className="flex h-full min-h-0 flex-col">
+                  <a
+                    href={`/stocks/${stock.code}/pdf`}
+                    className="mb-2 shrink-0 text-xs text-primary underline"
+                  >
+                    리포트·IR PDF 첨부 및 열람 →
+                  </a>
+                  <div className="min-h-0 flex-1">
+                    <FilingDocumentWorkspace code={stock.code} />
+                  </div>
+                </div>
+              )}
             </TabsContent>
             <TabsContent
               value="thesis"
@@ -574,8 +596,8 @@ function Workspace({
                 }}
               />
             </TabsContent>
-            <TabsContent value="financials" className="h-full overflow-y-auto">
-              <FinancialPanel stock={stock} />
+            <TabsContent value="financials" className="h-full overflow-hidden">
+              <FinancialExplorer stock={stock} />
             </TabsContent>
             <TabsContent value="price" className="h-full overflow-y-auto">
               <PricePanel stock={stock} />
@@ -597,7 +619,7 @@ function Workspace({
           </div>
         </Tabs>
       </main>
-      {rightVisible && (
+      {rightVisible && activeTab !== 'financials' && (
         <aside className="hidden w-[304px] shrink-0 flex-col overflow-hidden border-l bg-card lg:flex 2xl:w-[336px]">
           {evidenceRail}
         </aside>
@@ -1124,12 +1146,30 @@ function SourcesPanel({
     stale: '이전 자료',
   };
   const metrics = [
-    ['PER', formatMultiple(v.per), '시가총액 ÷ 최근 4분기 순이익'],
-    ['PBR', formatMultiple(v.pbr), '시가총액 ÷ 최근 기말 자본'],
     [
-      'ROE · 기말 자본',
+      'PER',
+      formatMultiple(v.per),
+      v.attribution_basis === 'parent'
+        ? '시가총액 ÷ 최근 4분기 지배주주 순이익'
+        : v.attribution_basis === 'total'
+          ? '시가총액 ÷ 최근 4분기 전체 순이익 · 참고 배수'
+          : '기존 수집 배수 · 상세 재무 갱신 후 기준 재확인',
+    ],
+    [
+      'PBR',
+      formatMultiple(v.pbr),
+      v.attribution_basis === 'parent'
+        ? '시가총액 ÷ 최근 지배주주 자본'
+        : v.attribution_basis === 'total'
+          ? '시가총액 ÷ 최근 자본총계 · 참고 배수'
+          : '기존 수집 배수 · 상세 재무 갱신 후 기준 재확인',
+    ],
+    [
+      v.roe_basis === 'average' ? 'ROE · 평균 자본' : 'ROE · 기말 자본',
       displayNumber(v.ttm_roe_pct, '%'),
-      '최근 4분기 순이익 ÷ 기말 자본. 평균 자본 기준 아님',
+      v.roe_basis === 'average'
+        ? '최근 4분기 순이익 ÷ 기초·기말 평균자본 · 연결은 지배주주 기준'
+        : '최근 4분기 순이익 ÷ 기말 자본. 평균 자본 기준 아님',
     ],
     [
       '부채비율',
@@ -1137,9 +1177,13 @@ function SourcesPanel({
       '최근 기말 부채총계 ÷ 자본',
     ],
     [
-      '금융비용 커버리지',
+      v.interest_basis === 'interest'
+        ? '이자비용 커버리지'
+        : '금융비용 커버리지',
       formatMultiple(v.interest_coverage),
-      '최근 4분기 영업이익 ÷ 수집된 금융비용. 이자비용만의 배율과 다를 수 있음',
+      v.interest_basis === 'interest'
+        ? '최근 4분기 영업이익 ÷ 이자비용. 금융비용 전체로 대체하지 않음'
+        : '최근 4분기 영업이익 ÷ 기존 수집 금융비용. 이자비용만의 배율과 다를 수 있음',
     ],
     [
       'EV / 영업이익 · 근사',

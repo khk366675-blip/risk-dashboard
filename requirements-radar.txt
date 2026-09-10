@@ -3,3 +3,4 @@ pandas==2.3.3
 python-dotenv==1.1.1
 requests==2.33.1
 lxml==6.1.2
+pypdf==6.18.0

@@ -1,10 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link2, NotebookPen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { emptyMemo, RichMemoEditor } from '@/components/rich-memo-editor';
+import {
+  memoPlainText,
+  parseRichMemo,
+  richMemoConfig,
+  type RichMemo,
+} from '@/lib/rich-memo';
 import {
   Dialog,
   DialogContent,
@@ -67,30 +74,64 @@ export function ManualEvidenceDialog({
 }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [busy, setBusy] = useState(false);
+  const [document, setDocument] = useState<RichMemo>(emptyMemo);
+  const [imageBusy, setImageBusy] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [wide, setWide] = useState(false);
+  const requestIdentity = useRef<{ payload: string; id: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const close = () => {
     setDraft(emptyDraft);
+    setDocument(emptyMemo());
+    setConfirmDiscard(false);
+    setWide(false);
+    requestIdentity.current = null;
     setError(null);
     onOpenChange(false);
+  };
+  const requestClose = () => {
+    if (busy || imageBusy) return;
+    if (
+      draft.title.trim() ||
+      draft.url.trim() ||
+      draft.note.trim() ||
+      memoPlainText(document)
+    )
+      setConfirmDiscard(true);
+    else close();
   };
   const patch = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((prior) => ({ ...prior, [key]: value }));
     setError(null);
   };
   const save = async () => {
-    if (busy) return;
+    if (busy || imageBusy) return;
     setBusy(true);
     setError(null);
     try {
+      const validatedDocument = memoPlainText(document)
+        ? parseRichMemo(document)
+        : null;
+      const payload = {
+        thesis_id: item.id,
+        thesis_revision: item.revision,
+        ...draft,
+        body: memoPlainText(document),
+        document: validatedDocument,
+      };
+      const signature = JSON.stringify(payload);
+      if (requestIdentity.current?.payload !== signature)
+        requestIdentity.current = {
+          payload: signature,
+          id: crypto.randomUUID(),
+        };
       const body = await responseJson(
         await fetch(`/api/watchlist/${item.code}/manual-evidence`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: crypto.randomUUID(),
-            thesis_id: item.id,
-            thesis_revision: item.revision,
-            ...draft,
+            ...payload,
+            id: requestIdentity.current.id,
           }),
         }),
       );
@@ -106,15 +147,15 @@ export function ManualEvidenceDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!busy) {
+        if (!busy && !imageBusy) {
           if (next) onOpenChange(true);
-          else close();
+          else requestClose();
         }
       }}
     >
       <DialogContent
-        className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-xl"
-        showCloseButton={!busy}
+        className="h-[min(900px,calc(100dvh-1.5rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-3xl"
+        showCloseButton={!busy && !imageBusy}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -126,8 +167,11 @@ export function ManualEvidenceDialog({
             연결합니다. 링크 본문은 자동 수집하거나 검증하지 않습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <fieldset
+          disabled={busy || imageBusy}
+          className="min-h-0 min-w-0 space-y-4 overflow-y-auto px-1"
+        >
+          <div className={wide ? 'hidden' : 'grid gap-3 sm:grid-cols-2'}>
             <div className="space-y-1.5 text-xs">
               <span className="font-medium">자료 종류</span>
               <select
@@ -165,7 +209,7 @@ export function ManualEvidenceDialog({
               placeholder="기사·리포트 제목 또는 메모 제목"
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={wide ? 'hidden' : 'grid gap-3 sm:grid-cols-2'}>
             <div className="space-y-1.5 text-xs">
               <span className="font-medium">링크 · 선택</span>
               <Input
@@ -189,25 +233,31 @@ export function ManualEvidenceDialog({
             </div>
           </div>
           <div className="block space-y-1.5 text-xs">
-            <span className="font-medium">
-              핵심 내용·인용 메모{' '}
-              <span className="font-normal text-muted-foreground">· 선택</span>
-            </span>
-            <Textarea
-              aria-label="직접 추가 자료 핵심 내용"
-              value={draft.body}
-              maxLength={researchEvidenceConfig.max_manual_body_chars}
-              onChange={(event) => patch('body', event.target.value)}
-              rows={6}
-              className="resize-y"
-              placeholder="자료에서 확인한 내용과 수치, 인용할 문장, 내 관찰을 직접 적어두세요. 링크가 없다면 내용을 입력해야 합니다."
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">
+                핵심 내용·인용 메모{' '}
+                <span className="font-normal text-muted-foreground">
+                  · 선택
+                </span>
+              </span>
+              <Button
+                type="button"
+                size="xs"
+                variant="ghost"
+                onClick={() => setWide(!wide)}
+              >
+                {wide ? '자료 정보 함께 보기' : '넓게 쓰기'}
+              </Button>
+            </div>
+            <RichMemoEditor
+              value={document}
+              onChange={setDocument}
+              disabled={busy}
+              expanded={wide}
+              onBusyChange={setImageBusy}
             />
-            <span className="block text-right text-[10px] text-muted-foreground">
-              {draft.body.length.toLocaleString()}/
-              {researchEvidenceConfig.max_manual_body_chars.toLocaleString()}자
-            </span>
           </div>
-          <fieldset className="space-y-2">
+          <fieldset className={wide ? 'hidden' : 'space-y-2'}>
             <legend className="text-xs font-medium">이 자료를 보는 관점</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {Object.entries(evidenceRelations).map(([value, label]) => (
@@ -223,7 +273,7 @@ export function ManualEvidenceDialog({
               ))}
             </div>
           </fieldset>
-          <div className="block space-y-1.5 text-xs">
+          <div className={wide ? 'hidden' : 'block space-y-1.5 text-xs'}>
             <span className="font-medium">판단 메모 · 선택</span>
             <Textarea
               aria-label="직접 추가 자료 판단 메모"
@@ -233,7 +283,13 @@ export function ManualEvidenceDialog({
               placeholder="왜 이 관계로 분류했는지, 다음에 무엇을 확인할지"
             />
           </div>
-          <p className="rounded-lg bg-muted/50 p-2.5 text-[10px] leading-5 text-muted-foreground">
+          <p
+            className={
+              wide
+                ? 'hidden'
+                : 'rounded-lg bg-muted/50 p-2.5 text-[10px] leading-5 text-muted-foreground'
+            }
+          >
             제목은 필수이며 링크 또는 핵심 내용 중 하나가 필요합니다. 저장 시
             현재 투자포인트 버전과 입력 원문을 함께 고정합니다.
           </p>
@@ -242,28 +298,49 @@ export function ManualEvidenceDialog({
               {error}
             </p>
           )}
-        </div>
+        </fieldset>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={close}
-          >
-            취소
-          </Button>
-          <Button
-            type="button"
-            disabled={
-              busy ||
-              !draft.title.trim() ||
-              (!draft.url.trim() && !draft.body.trim())
-            }
-            onClick={() => void save()}
-          >
-            <Link2 />
-            {busy ? '저장 중…' : '현재 투자포인트에 연결'}
-          </Button>
+          {confirmDiscard ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs">저장하지 않은 내용을 버릴까요?</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmDiscard(false)}
+              >
+                계속 작성
+              </Button>
+              <Button type="button" variant="destructive" onClick={close}>
+                버리고 닫기
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy || imageBusy}
+                onClick={requestClose}
+              >
+                취소
+              </Button>
+              <Button
+                type="button"
+                disabled={
+                  busy ||
+                  imageBusy ||
+                  memoPlainText(document).length >
+                    richMemoConfig.max_text_chars ||
+                  !draft.title.trim() ||
+                  (!draft.url.trim() && !memoPlainText(document))
+                }
+                onClick={() => void save()}
+              >
+                <Link2 />
+                {busy ? '저장 중…' : '현재 투자포인트에 연결'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

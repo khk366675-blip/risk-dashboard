@@ -12,6 +12,7 @@ export function thesisRequest(request: Request, code: string, write = false) {
 }
 export async function thesisBody(
   request: Request,
+  maxBytes = thesisConfig.max_request_bytes,
 ): Promise<Record<string, unknown>> {
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new ThesisError('JSON 요청이 필요합니다.');
@@ -24,7 +25,7 @@ export async function thesisBody(
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > thesisConfig.max_request_bytes) {
+      if (size > maxBytes) {
         await reader.cancel();
         throw new ThesisError('요청 크기 한도를 초과했습니다.', 413);
       }

@@ -140,6 +140,7 @@ export function buildLocalMobileSnapshot(): MobileSnapshot {
                 relation: entry.relation,
                 label: entry.title,
                 summary: entry.body,
+                document: entry.document,
                 source: entry.source_name || '사용자 입력',
                 as_of: entry.published_at ?? entry.created_at,
                 url: entry.url,

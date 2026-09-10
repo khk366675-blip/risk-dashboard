@@ -95,7 +95,7 @@ def aggregate_valuation(
 
     def total(metric: str) -> float | None:
         values = [finite(quarter.get(metric)) for quarter in recent]
-        return sum(value for value in values if value is not None) if comparable and all(value is not None for value in values) else None
+        return sum(value for value in values if value is not None) if comparable and all(value is not None for value in values) and all(metric not in q.get('noncomparable_metrics',[]) for q in recent) else None
 
     ttm_rev = total("rev")
     ttm_op = total("op")
@@ -108,6 +108,8 @@ def aggregate_valuation(
     cash = finite(latest.get("cash"))
     financial_debt = finite(latest.get("fin_debt"))
 
+    # Radar retains its explicitly labelled closing-equity discovery criterion.
+    # The research workspace separately reports average-equity ROE.
     roe = ttm_ni / equity if ttm_ni is not None and equity and equity > 0 else None
     debt_ratio = debt / equity if debt is not None and equity and equity > 0 else None
     interest_coverage = ttm_op / interest if ttm_op is not None and interest and interest > 0 else None
@@ -228,6 +230,7 @@ def store_snapshot(
         insert_many(connection, "INSERT INTO valuations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", valuation_rows)
         connection.execute("INSERT INTO collector_metadata(key,value) VALUES (?,?)", ("market_as_of", market_date.isoformat()))
         connection.execute("INSERT INTO collector_metadata(key,value) VALUES (?,?)", ("generated_at", generated_at))
+        connection.execute("INSERT INTO collector_metadata(key,value) VALUES (?,?)", ('financial_method_version', 'radar-verified-v2'))
         optimize(connection)
     finally:
         connection.close()
@@ -295,11 +298,13 @@ def main() -> int:
 
     try:
         log("1/7 KRX 전체 Universe 최신 스냅샷 수집")
-        universe = collect_universe()
         market_date = completed_market_date()
+        universe = collect_universe(market_date)
+        status["warnings"].extend(universe.attrs.get("warnings", []))
         common_mask = universe.apply(lambda row: is_common_equity(row, rules["common"]["exclude_name_contains"]), axis=1)
         common_rows = universe[common_mask].copy()
         status["sources"]["universe"] = {
+            **universe.attrs,
             "status": "ok",
             "collected_at": generated_at,
             "record_count": int(len(common_rows)),
@@ -467,6 +472,7 @@ def main() -> int:
             for warning in radar_payload.get("warnings", [])
             if "기존" not in warning and "레거시" not in warning
         ]
+        radar_payload["warnings"].extend(status["warnings"])
         radar_payload["summary"]["evaluated_universe_count"] = radar_payload["summary"]["standard_eligible_count"]
         radar_payload["summary"]["financial_coverage_count"] = len(quarters_by_code)
         radar_payload["summary"]["price_target_count"] = len(price_targets)

@@ -260,6 +260,11 @@ def document_files(db):
             if not re.fullmatch(r'\d{6}', code) or not re.fullmatch(r'\d{14}', receipt) or not re.fullmatch(r'[a-f0-9]{64}', sha or '') or name != f'documents/{code}/{receipt}/{sha}.{ext}':
                 raise BackupError('공시 원문 파일의 경로·해시 기록이 잘못됐습니다.')
             files[name] = sha
+    if 'pdf_documents' in tables:
+        for relative, sha in db.execute('SELECT path,sha256 FROM pdf_documents'):
+            if not re.fullmatch(r'[a-f0-9]{64}', sha or '') or relative != f'attachments/{sha}.pdf':
+                raise BackupError('PDF 첨부 파일의 경로·해시가 잘못됐습니다.')
+            files[relative] = sha
     return list(files.items())
 
 
@@ -269,9 +274,13 @@ def allowed_member(name, database_name, config):
         return False
     if name == f'research/{database_name}':
         return True
+    if name == f'research/peers/{database_name}' or re.fullmatch(r'research/peers/raw/\d{6}/\d{4}_\d{5}\.json', name):
+        return True
     if re.fullmatch(r'research/raw/\d{6}/\d{4}_\d{5}\.json', name):
         return True
     if re.fullmatch(r'research/documents/\d{6}/\d{14}/[a-f0-9]{64}\.(zip|json)', name):
+        return True
+    if re.fullmatch(r'research/attachments/[a-f0-9]{64}\.pdf', name):
         return True
     if name.startswith('context/'):
         relative = name.removeprefix('context/')
@@ -316,6 +325,11 @@ def verify_archive(archive: Path, config=None, database_name='watchlist.sqlite')
                     entry = entries.get('research/' + relative)
                     if not entry or entry['sha256'] != sha:
                         raise BackupError('백업에 원문 파일이 누락됐거나 DB 해시와 다릅니다.')
+            peer_name = f'research/peers/{database_name}'
+            if peer_name in entries:
+                peer_snapshot = Path(temporary) / ('peer-' + database_name)
+                peer_snapshot.write_bytes(source.read(peer_name))
+                check_database(peer_snapshot)
         return manifest
 
 
@@ -394,6 +408,22 @@ def create_backup(root=ROOT, directory=None, destination=None, automatic=False):
                         warnings.append(f'수집 중인 {len(active)}개 종목은 DB에 저장된 중간 자료만 보관했습니다. 해당 종목의 원자료 캐시는 제외했으며 복구 후 재수집이 필요합니다.')
                 finally:
                     guard.rollback()
+            peer_database = directory / 'peers' / database_name
+            if peer_database.exists():
+                checked_file(peer_database, directory)
+                peer_snapshot = Path(snapshot).with_name('peer-' + database_name)
+                deadline = time.monotonic() + config['snapshot_timeout_seconds']
+                with closing(sqlite3.connect(peer_database.as_uri() + '?mode=ro', uri=True, timeout=config['sqlite_timeout_seconds'])) as reader, closing(sqlite3.connect(peer_snapshot)) as copy:
+                    reader.backup(copy, pages=256, progress=progress)
+                check_database(peer_snapshot)
+                add(f'research/peers/{database_name}', peer_snapshot.read_bytes())
+                with closing(sqlite3.connect(peer_snapshot)) as peer_db:
+                    peer_active = {row[0] for row in peer_db.execute("SELECT code FROM research_jobs WHERE state IN ('queued','running')")}
+                for file in sorted((directory / 'peers' / 'raw').rglob('*.json')):
+                    relative = file.relative_to(directory).as_posix()
+                    if file.parent.name in peer_active: continue
+                    checked_file(file, directory)
+                    add('research/' + relative, file.read_bytes())
             for item in config['context_paths']:
                 base = root / item
                 if not base.exists():
@@ -450,6 +480,8 @@ def restore_backup(archive: Path, target: Path, root=ROOT):
                 reset_count = db.execute("UPDATE research_jobs SET state='error',pid=NULL,step='백업에서 복구한 작업입니다. 자료를 확인하고 재시도해 주세요.',error='복구 전 수집 작업은 자동 재개하지 않습니다.' WHERE state IN ('queued','running')").rowcount
                 db.execute('UPDATE research_jobs SET pid=NULL')
                 tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                if 'dashboard_jobs' in tables:
+                    db.execute("UPDATE dashboard_jobs SET state='error',pid=NULL,step='복구한 작업 · 재시도 필요',error='복구 전 실행은 자동 재개하지 않습니다.' WHERE state IN ('queued','running')")
                 if 'thesis_ai_runs' in tables:
                     db.execute("UPDATE thesis_ai_runs SET state='error',completed_at=?,error_message='백업에서 복구한 미완료 AI 요청입니다. 자동 재전송하지 않았습니다. 비용 발생 여부는 공급자 사용량에서 확인해 주세요.' WHERE state='pending'", (datetime.now(timezone.utc).isoformat(),))
                     db.execute('UPDATE ai_request_attempts SET finished_at=? WHERE finished_at IS NULL', (int(time.time() * 1000),))
@@ -459,6 +491,12 @@ def restore_backup(archive: Path, target: Path, root=ROOT):
                 if 'filing_documents' in tables:
                     db.execute("UPDATE filing_documents SET state='error',error='백업에서 복구한 미완료 원문 수집입니다. 자동 재개하지 않습니다.' WHERE state IN ('queued','running')")
         check_database(payload / 'research' / database_name)
+        peer_database = payload / 'research' / 'peers' / database_name
+        if peer_database.exists():
+            with closing(sqlite3.connect(peer_database)) as db:
+                with db:
+                    db.execute("UPDATE research_jobs SET state='error',pid=NULL,step='복구한 비교 자료 · 재시도 필요',error='복구 전 실행은 자동 재개하지 않습니다.' WHERE state IN ('queued','running')")
+            check_database(peer_database)
         (payload / 'restore-info.json').write_text(json.dumps({'restored_at': datetime.now(timezone.utc).isoformat(), 'backup_created_at': manifest['created_at'], 'interrupted_jobs': reset_count, 'warnings': manifest['warnings']}, ensure_ascii=False, indent=2), encoding='utf-8')
         # mkdir(exist_ok=False) prevents races from overwriting a user directory.
         target.mkdir(exist_ok=False)

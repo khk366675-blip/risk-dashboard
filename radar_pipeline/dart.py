@@ -67,7 +67,8 @@ class DartClient:
             except Exception as exc:
                 last_error = exc
                 time.sleep(0.8 * (2**attempt))
-        raise RuntimeError(f"DART request failed for {endpoint}: {last_error}")
+        # requests exceptions can contain the full URL with crtfc_key.
+        raise RuntimeError(f"DART request failed for {endpoint}: {type(last_error).__name__}")
 
     def json(self, endpoint: str, params: dict[str, Any], *, refresh: bool) -> dict[str, Any]:
         cache_path = self._cache_path(endpoint, params)
@@ -202,7 +203,7 @@ class DartClient:
                 refresh=refresh,
             )
             if payload.get("status") == "000" and payload.get("list"):
-                return payload["list"]
+                return [{**row, 'fs_div': row.get('fs_div', fs_div)} for row in payload['list']]
         return []
 
     def full_accounts_many(
@@ -332,7 +333,7 @@ ACCOUNT_IDS = {
     "equity": {"ifrs-full_Equity"},
     "debt": {"ifrs-full_Liabilities"},
     "ocf": {"ifrs-full_CashFlowsFromUsedInOperatingActivities"},
-    "interest": {"ifrs-full_FinanceCosts"},
+    "interest": {"ifrs-full_InterestExpense", "dart_InterestExpense"},
     "cash": {"ifrs-full_CashAndCashEquivalents"},
     "short_debt": {"ifrs-full_ShorttermBorrowings"},
     "current_long_debt": {"ifrs-full_CurrentPortionOfLongtermBorrowings"},
@@ -349,7 +350,7 @@ ACCOUNT_NAMES = {
     "equity": {"자본총계"},
     "debt": {"부채총계"},
     "ocf": {"영업활동현금흐름", "영업활동으로 인한 현금흐름"},
-    "interest": {"금융비용", "이자비용"},
+    "interest": {"이자비용"},
     "cash": {"현금및현금성자산"},
     "short_debt": {"단기차입금"},
     "current_long_debt": {"유동성장기부채", "유동성장기차입금"},
@@ -380,8 +381,14 @@ def find_record(records: list[dict[str, Any]], metric: str, statement: set[str] 
 
 
 def metric_value(records: list[dict[str, Any]], metric: str, field: str, statement: set[str] | None = None) -> float | None:
-    record = find_record(records, metric, statement)
-    return finite_number(record.get(field)) if record else None
+    candidates = [r for r in records if statement is None or r.get('sj_div') in statement]
+    matches = [r for r in candidates if r.get('account_id') in ACCOUNT_IDS.get(metric, set())]
+    if not matches:
+        matches = [r for r in candidates if str(r.get('account_nm', '')).strip() in ACCOUNT_NAMES.get(metric, set())]
+    if not matches or any(r.get('currency') not in ('KRW', '원') for r in matches):
+        return None
+    values = [finite_number(r.get(field)) for r in matches]
+    return values[0] if all(v is not None for v in values) and len(set(values)) == 1 else None
 
 
 def parse_major_quarters(
@@ -406,12 +413,10 @@ def parse_major_quarters(
         rows = preferred_statement_rows(period_records)
         revenue = metric_value(rows, "rev", "thstrm_amount", {"IS", "CIS"})
         operating_profit = metric_value(rows, "op", "thstrm_amount", {"IS", "CIS"})
-        net_income = metric_value(rows, "ni_parent", "thstrm_amount", {"IS", "CIS"})
-        if net_income is None:
-            net_income = metric_value(rows, "ni", "thstrm_amount", {"IS", "CIS"})
-        equity = metric_value(rows, "equity_parent", "thstrm_amount", {"BS"})
-        if equity is None:
-            equity = metric_value(rows, "equity", "thstrm_amount", {"BS"})
+        # Keep numerator/denominator on a consistent total-company basis.
+        # Parent-attributable financials are separately verified by the research collector.
+        net_income = metric_value(rows, "ni", "thstrm_amount", {"IS", "CIS"})
+        equity = metric_value(rows, "equity", "thstrm_amount", {"BS"})
         debt = metric_value(rows, "debt", "thstrm_amount", {"BS"})
         raw_quarters.setdefault(code, {})[(year, period.quarter)] = {
             "year": year,
@@ -423,6 +428,7 @@ def parse_major_quarters(
             "ni": net_income,
             "equity": equity,
             "debt": debt,
+            "_reported_ytd": {metric: metric_value(rows, metric, 'thstrm_amount' if period.quarter == '4Q' else 'thstrm_add_amount', {'IS','CIS'}) for metric in ('rev','op','ni')},
             "data_quality": "ok" if revenue is not None and operating_profit is not None else "partial",
         }
 
@@ -441,11 +447,24 @@ def parse_major_quarters(
             for metric in ("rev", "op", "ni"):
                 annual = quarter.get(metric)
                 prior_values = [item.get(metric) for item in previous]
-                if annual is not None and len(prior_values) == 3 and all(value is not None for value in prior_values):
+                prior_ytd = next((q['_reported_ytd'][metric] for q in previous if q['quarter'] == '3Q'), None)
+                if annual is not None and prior_ytd is not None:
+                    quarter[metric] = annual - prior_ytd
+                elif annual is not None and len(prior_values) == 3 and all(value is not None for value in prior_values):
                     quarter[metric] = annual - sum(float(value) for value in prior_values if value is not None)
                 else:
                     quarter[metric] = None
                     quarter["data_quality"] = "partial"
+        for quarter in quarters:
+            group = [q for q in quarters if q['year']==quarter['year'] and quarter_order[q['quarter']]<=quarter_order[quarter['quarter']] and q.get('statement_basis')==quarter.get('statement_basis')]
+            if len(group)!=quarter_order[quarter['quarter']]:continue
+            for metric in ('rev','op','ni'):
+                cumulative=quarter['_reported_ytd'].get(metric)
+                if cumulative is not None and all(q.get(metric) is not None for q in group) and sum(q[metric] for q in group)!=cumulative:
+                    for q in group:
+                        if metric not in q.setdefault('noncomparable_metrics',[]):q['noncomparable_metrics'].append(metric)
+                        q['data_quality']='partial'
+        for quarter in quarters:quarter.pop('_reported_ytd',None)
         result[code] = quarters
     return result
 
@@ -467,7 +486,9 @@ def parse_full_enrichment(
             metric_value(rows, metric, "thstrm_amount", {"BS"})
             for metric in ("short_debt", "current_long_debt", "bonds", "long_debt")
         ]
-        financial_debt = sum(value for value in debt_parts if value is not None) if any(value is not None for value in debt_parts) else None
+        # Missing components and overlapping current/long-term disclosures do not
+        # establish total financial debt. Do not infer EV from an incomplete sum.
+        financial_debt = None
         result.setdefault(code, {})[(period.year, period.quarter)] = {
             "ocf_cumulative": ocf_cumulative,
             "interest": interest,

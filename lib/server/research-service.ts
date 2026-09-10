@@ -10,6 +10,7 @@ import {
   localStore,
   researchConfig,
   researchDirectory,
+  ResearchStore,
 } from './research-store.ts';
 
 export async function readRadar(): Promise<RadarRun> {
@@ -194,7 +195,7 @@ export function manualPreview(
     },
   };
 }
-export async function startResearchWorker(code: string, jobId: string) {
+export async function startResearchWorker(code: string, jobId: string, directory = researchDirectory) {
   const python =
     process.env.RADAR_PYTHON_EXECUTABLE ||
     path.join(
@@ -237,7 +238,7 @@ export async function startResearchWorker(code: string, jobId: string) {
         stdio: 'ignore',
         env: {
           ...process.env,
-          RESEARCH_STORAGE_DIR: researchDirectory,
+          RESEARCH_STORAGE_DIR: directory,
           PYTHONUTF8: '1',
           PYTHONIOENCODING: 'utf-8',
         },
@@ -248,7 +249,7 @@ export async function startResearchWorker(code: string, jobId: string) {
         // Spawn can succeed even when Python exits before initializing the job.
         // Keep registration; fail only the matching, still-active attempt.
         try {
-          const store = localStore();
+          const store = new ResearchStore(directory);
           try {
             store.fail(code, jobId);
           } finally {
@@ -264,7 +265,7 @@ export async function startResearchWorker(code: string, jobId: string) {
       });
     });
   } catch {
-    const store = localStore();
+    const store = new ResearchStore(directory);
     try {
       store.fail(code, jobId);
     } finally {

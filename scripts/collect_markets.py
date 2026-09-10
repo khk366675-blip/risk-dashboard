@@ -9,10 +9,9 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-import FinanceDataReader as fdr
-
 from radar_pipeline import config
 from radar_pipeline.market import completed_market_date
+from radar_pipeline.market_sources import bounded_price_frame, current_listing
 
 
 def finite(value: Any) -> float | None:
@@ -62,7 +61,28 @@ def absolute_change(values: list[float], periods: int) -> float | None:
 
 
 def collect_asset(spec: dict[str, Any], start: date, today: date) -> dict[str, Any]:
-    frame = fdr.DataReader(spec["symbol"], start.isoformat(), today.isoformat())
+    source = "FinanceDataReader"
+    source_warning = None
+    fallback = config.MARKET_FALLBACK_SYMBOLS.get(spec["symbol"])
+    try:
+        frame = bounded_price_frame(spec["symbol"], start, today)
+        if "Close" not in frame or len(frame["Close"].dropna()) < 61:
+            raise RuntimeError("원 시세의 가격 이력이 부족합니다")
+    except Exception:
+        if not fallback:
+            raise
+        frame = bounded_price_frame(fallback, start, today)
+        source = "Yahoo Finance via FinanceDataReader"
+        source_warning = "KRX 지수 수집 실패로 Yahoo Finance 원지표를 사용했습니다."
+    if fallback and source == "FinanceDataReader":
+        try:
+            alternate = bounded_price_frame(fallback, start, today)
+            if not alternate.empty and "Close" in alternate and not alternate["Close"].dropna().empty and (frame.empty or alternate["Close"].dropna().index[-1] > frame["Close"].dropna().index[-1]):
+                frame = alternate
+                source = "Yahoo Finance via FinanceDataReader"
+                source_warning = "KRX 지수 자료보다 최신인 Yahoo Finance 원지표를 사용했습니다."
+        except Exception:
+            pass  # The successfully fetched primary series remains available.
     if "Close" not in frame.columns:
         raise RuntimeError("Close column missing")
     close = frame["Close"].dropna()
@@ -96,9 +116,9 @@ def collect_asset(spec: dict[str, Any], start: date, today: date) -> dict[str, A
         "change_252d_value": absolute_change(values, 252),
         "position_252d_pct": position,
         "as_of": dates[-1],
-        "source": "FinanceDataReader",
+        "source": source,
         "freshness": freshness,
-        "warning": f"마지막 관측일이 {age}일 전입니다." if freshness == "stale" else None,
+        "warning": " ".join(item for item in (source_warning, f"마지막 관측일이 {age}일 전입니다." if freshness == "stale" else None) if item) or None,
         "latest_session": {
             "date": dates[-1],
             "open": session_open,
@@ -120,7 +140,7 @@ def stale_asset(spec: dict[str, Any], previous: dict[str, Any], error: Exception
         except ValueError:
             age = config.MARKET_MAX_STALE_DAYS + 1
         if age <= config.MARKET_MAX_STALE_DAYS:
-            return {**old, "freshness": "stale", "warning": f"이번 수집 실패로 {old['as_of']} 관측값을 유지합니다.", "collection_error": type(error).__name__}
+            return {**old, "freshness": "stale", "warning": f"이번 수집 실패로 {old['as_of']} 관측값을 유지합니다.", "collection_error": f"{type(error).__name__}: {str(error)[:300]}"}
     return {
         **spec,
         "value": None,
@@ -139,13 +159,13 @@ def stale_asset(spec: dict[str, Any], previous: dict[str, Any], error: Exception
         "source": "FinanceDataReader",
         "freshness": "missing",
         "warning": "이번 실행에서 데이터를 불러오지 못했습니다.",
-        "collection_error": type(error).__name__,
+        "collection_error": f"{type(error).__name__}: {str(error)[:300]}",
         "latest_session": None,
         "sparkline": [],
     }
 
 
-def korea_breadth(database_path: Path) -> dict[str, Any]:
+def korea_breadth(database_path: Path, market_sessions: list[str] | None = None) -> dict[str, Any]:
     if not database_path.exists():
         return {"status": "missing", "as_of": None, "coverage_count": 0, "advancers_pct": None, "above_20d_pct": None, "above_60d_pct": None, "new_high_20d_pct": None, "new_low_20d_pct": None}
     connection = sqlite3.connect(database_path)
@@ -166,22 +186,28 @@ def korea_breadth(database_path: Path) -> dict[str, Any]:
         completed = completed_market_date().isoformat()
         target_date = completed
         if latest_date is None or completed > latest_date:
-            listing = fdr.StockListing("KRX")
+            if latest_date and market_sessions and len([day for day in market_sessions if latest_date < day <= completed]) > 1:
+                raise RuntimeError("중간 거래일 가격이 누락되어 있습니다. Radar 실행 후 가격 이력이 보완됩니다.")
+            listing = current_listing(date.fromisoformat(completed))
             if listing is None or listing.empty or "Code" not in listing.columns or "Close" not in listing.columns:
                 raise RuntimeError("KRX latest snapshot is empty")
             latest_closes: dict[str, float] = {}
             for _, row in listing.iterrows():
+                if str(row.get("QuoteDate", listing.attrs.get("as_of", ""))) != completed:
+                    continue
                 code = str(row.get("Code", "")).split(".")[0].strip().zfill(6)
                 close = finite(row.get("Close"))
                 if code in by_code and close is not None and close > 0:
                     latest_closes[code] = close
+            if not latest_closes:
+                raise RuntimeError("완료 시장일과 일치하는 종가가 없습니다")
             for code, close in latest_closes.items():
                 if not by_code[code] or by_code[code][-1][0] < completed:
                     by_code[code].append((completed, close))
-            refresh_source = "FinanceDataReader KRX latest + radar_market.db history"
+            refresh_source = f"{listing.attrs.get('source', 'FinanceDataReader KRX latest')} + radar_market.db history"
     except Exception as error:
         target_date = latest_date
-        warning = f"KRX breadth 최신화 실패로 {latest_date or '기존'} 관측값을 유지합니다: {type(error).__name__}"
+        warning = f"KRX breadth 최신화 실패로 {latest_date or '기존'} 관측값을 유지합니다: {type(error).__name__}: {str(error)[:200]}"
 
     eligible = [items for items in by_code.values() if len(items) >= 60 and items[-1][0] == target_date]
     if not eligible:
@@ -272,7 +298,16 @@ def collect() -> dict[str, Any]:
                 assets.append(stale_asset(spec, old, error, today))
     order = {spec["key"]: index for index, spec in enumerate(config.MARKET_ASSETS)}
     assets.sort(key=lambda item: order[item["key"]])
-    breadth = korea_breadth(config.DATABASE_PATH)
+    korea_index = next((asset for asset in assets if asset["key"] == "kospi"), {})
+    sessions = [item["date"] for item in korea_index.get("sparkline", [])]
+    try:
+        breadth = korea_breadth(config.DATABASE_PATH, sessions)
+    except Exception as error:
+        # A locked/unavailable local price DB must not discard 11 fetched assets.
+        breadth = {"status": "missing", "as_of": None, "coverage_count": 0,
+                   "advancers_pct": None, "above_20d_pct": None, "above_60d_pct": None,
+                   "new_high_20d_pct": None, "new_low_20d_pct": None, "source": "radar_market.db",
+                   "warning": f"시장 확산 지표 수집 실패: {type(error).__name__}: {str(error)[:200]}"}
     latest_count = sum(asset["freshness"] == "latest" for asset in assets)
     stale_count = sum(asset["freshness"] == "stale" for asset in assets)
     missing_count = sum(asset["freshness"] == "missing" for asset in assets)
@@ -296,7 +331,16 @@ def collect() -> dict[str, Any]:
 
 
 def main() -> int:
-    payload = collect()
+    started = datetime.now().astimezone().isoformat(timespec="seconds")
+    status = {"run_id": f"markets_{datetime.now().strftime('%Y%m%d_%H%M%S')}", "started_at": started, "status": "running"}
+    write_json(config.MARKET_COLLECTOR_STATUS_PATH, status)
+    try:
+        payload = collect()
+    except Exception as error:
+        write_json(config.MARKET_COLLECTOR_STATUS_PATH, {**status, "status": "failed", "finished_at": datetime.now().astimezone().isoformat(), "error": f"{type(error).__name__}: {error}"})
+        raise
+    payload["run_id"] = status["run_id"]
+    write_json(config.MARKET_COLLECTOR_STATUS_PATH, {**status, "status": payload["status"], "finished_at": payload["generated_at"], "as_of": payload["as_of"], "warnings": payload["warnings"], "sources": payload["source_status"], "errors": {asset["key"]: asset["collection_error"] for asset in payload["assets"] if asset.get("collection_error")}})
     write_json(config.INTERNAL_MARKET_PATH, payload)
     write_json(config.PUBLIC_MARKET_PATH, payload)
     print(f"Market snapshot {payload['status']}: {payload['source_status']['finance_data_reader']['latest_count']}/{len(payload['assets'])} latest")

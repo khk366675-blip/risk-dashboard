@@ -1,9 +1,17 @@
 'use client';
+import { runDashboardJob } from '@/lib/dashboard-jobs-client';
 import { useActionConfirmation } from '@/components/use-action-confirmation';
 import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
-import { createContext, useContext, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import {
   AlertTriangle,
   ChevronDown,
@@ -51,6 +59,8 @@ export default function RadarWorkspace({
   initialRadarRun?: RadarRun;
 }) {
   const [radarRun, setRadarRun] = useState<RadarRun>(currentRadarRun);
+  const jobRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => jobRequest.current?.abort(), []);
   const [selectedLens, setSelectedLens] = useState<Lens | 'all'>('all');
   const [eventType, setEventType] = useState('all');
   const [selectedCode, setSelectedCode] = useState(
@@ -109,22 +119,14 @@ export default function RadarWorkspace({
     setRefreshError(null);
     setDiagnosticsOpen(true);
     try {
-      const response = await fetch('/api/radar/refresh', {
-        method: 'POST',
-        cache: 'no-store',
-      });
-      const payload = (await response.json()) as {
-        ok: boolean;
-        radar?: RadarRun;
-        error?: string;
-        detail?: string;
+      jobRequest.current?.abort();
+      jobRequest.current = new AbortController();
+      const payload = {
+        radar: (await runDashboardJob(
+          'radar',
+          jobRequest.current.signal,
+        )) as RadarRun,
       };
-      if (!response.ok || !payload.ok || !payload.radar)
-        throw new Error(
-          payload.detail ||
-            payload.error ||
-            'Radar 실행 응답이 올바르지 않습니다.',
-        );
       setRadarRun(payload.radar);
       setSelectedCode((current) =>
         payload.radar!.candidates.some(

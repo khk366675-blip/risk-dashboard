@@ -1,0 +1,1 @@
+{"poll_ms":2500,"heartbeat_seconds":5,"interrupted_after_seconds":90,"timeout_seconds":{"markets":300,"radar":1800},"pdf_max_bytes":26214400,"pdf_max_pages":1000,"peer_limit":5,"financial_years":5}

@@ -1,4 +1,5 @@
 import type { EvidenceRelation } from './research-evidence';
+import type { RichMemo } from './rich-memo';
 
 export const manualEvidenceTypes = {
   news: '뉴스',
@@ -24,6 +25,7 @@ export type ManualEvidence = {
   source_name: string;
   published_at: string | null;
   body: string;
+  document?: RichMemo | null;
   note: string;
   source_status: 'user_supplied';
   snapshot_hash: string;

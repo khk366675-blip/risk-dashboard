@@ -54,10 +54,16 @@ export function listedStocks(): ListedStock[] {
     /* turbopackIgnore: true */ process.cwd(),
     researchConfig.listing_path,
   );
-  const rows = csvRows(readFileSync(file, 'utf8'));
+  return parseListedStocks(readFileSync(file, 'utf8'));
+}
+
+export function parseListedStocks(text: string): ListedStock[] {
+  // Python exports utf-8-sig for Korean CSV/Excel compatibility. The BOM is
+  // encoding metadata, not part of the first column name (which may be Code).
+  const rows = csvRows(text.replace(/^\uFEFF/, ''));
   const header = rows.shift();
   if (!header) throw new Error('상장종목 목록이 비어 있습니다.');
-  const index = Object.fromEntries(header.map((key, value) => [key, value]));
+  const index = Object.fromEntries(header.map((key, value) => [key.trim(), value]));
   for (const required of ['Code', 'Name', 'Market'])
     if (index[required] === undefined)
       throw new Error('상장종목 목록 형식을 확인해 주세요.');

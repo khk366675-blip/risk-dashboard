@@ -14,6 +14,9 @@ export async function GET(
     const { code } = await params;
     thesisRequest(request, code);
     const format = new URL(request.url).searchParams.get('format');
+    const period = new URL(request.url).searchParams.get('period') ?? 'quarter';
+    if (!['quarter', 'annual', 'ttm'].includes(period))
+      throw new ThesisError('재무 기간을 확인해 주세요.');
     if (!['csv', 'md'].includes(format ?? ''))
       throw new ThesisError('내보내기 형식을 확인해 주세요.');
     const owner = localStore();
@@ -28,7 +31,7 @@ export async function GET(
         );
       const content =
         format === 'csv'
-          ? financialCsv(stock)
+          ? financialCsv(stock, period as 'quarter' | 'annual' | 'ttm')
           : researchMarkdown(owner.db, stock);
       return new Response(content, {
         headers: {

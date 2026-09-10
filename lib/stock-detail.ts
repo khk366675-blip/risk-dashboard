@@ -1,6 +1,17 @@
 import type { RadarCandidate } from '@/lib/radar-run';
 
 export type StockQuarter = {
+  [key: string]: unknown;
+  metric_sources?: Record<
+    string,
+    {
+      status: string;
+      formula?: string;
+      inputs?: unknown[];
+      [key: string]: unknown;
+    }
+  >;
+  parser_version?: string;
   year: number;
   quarter: string;
   label: string;
@@ -62,6 +73,10 @@ export type StockDetail = {
     price_position_52w_pct: number | null;
   };
   valuation: {
+    roe_basis?: 'average' | 'closing';
+    attribution_basis?: 'parent' | 'total';
+    interest_basis?: 'interest' | 'finance_costs';
+    method?: string;
     per: number | null;
     pbr: number | null;
     ev_ebitda: number | null;
@@ -75,6 +90,12 @@ export type StockDetail = {
     ttm_operating_cash_flow: number | null;
   };
   quarters: StockQuarter[];
+  annual_financials?: StockQuarter[];
+  financial_parser_version?: string;
+  radar_valuation_basis?: {
+    interest_basis?: 'interest' | 'finance_costs';
+    roe_basis?: 'average' | 'closing';
+  };
   prices: StockPrice[];
   events: StockEvent[];
   radar: RadarCandidate;

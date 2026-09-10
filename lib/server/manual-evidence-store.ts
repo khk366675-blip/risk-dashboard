@@ -12,6 +12,7 @@ import {
   type ManualEvidenceType,
 } from '../research-manual-evidence.ts';
 import { ThesisStore } from './thesis-store.ts';
+import { parseRichMemo, memoPlainText, type RichMemo } from '../rich-memo.ts';
 
 type CreateManualEvidence = {
   id: string;
@@ -24,6 +25,7 @@ type CreateManualEvidence = {
   source_name: string;
   published_at: string;
   body: string;
+  document?: RichMemo | null;
   note: string;
 };
 
@@ -80,6 +82,16 @@ export class ManualEvidenceStore {
       published_at:
         typeof row.published_at === 'string' ? row.published_at : null,
       body: String(row.body),
+      document: (() => {
+        const saved = this.db
+          .prepare(
+            'SELECT document_json FROM research_manual_documents WHERE manual_id=?',
+          )
+          .get(String(row.id));
+        return saved
+          ? parseRichMemo(JSON.parse(String(saved.document_json)))
+          : null;
+      })(),
       note: String(row.note),
       source_status: 'user_supplied',
       snapshot_hash: String(row.snapshot_hash),
@@ -105,14 +117,19 @@ export class ManualEvidenceStore {
       .map((row) => this.decode(row));
   }
 
-  create(code: string, raw: CreateManualEvidence) {
+  create(
+    code: string,
+    raw: CreateManualEvidence,
+    afterCreate?: (id: string) => void,
+  ) {
+    const document = parseRichMemo(raw.document);
     const value = {
       ...raw,
       title: clean(raw.title),
       url: clean(raw.url),
       source_name: clean(raw.source_name),
       published_at: clean(raw.published_at),
-      body: clean(raw.body),
+      body: document ? memoPlainText(document) : clean(raw.body),
       note: clean(raw.note),
     };
     const strings = [
@@ -166,6 +183,7 @@ export class ManualEvidenceStore {
         source_name: value.source_name,
         published_at: value.published_at || null,
         body: value.body,
+        ...(document ? { document } : {}),
       };
       const snapshotHash = createHash('sha256')
         .update(JSON.stringify(snapshot))
@@ -187,6 +205,7 @@ export class ManualEvidenceStore {
             '동일 요청 식별자로 다른 자료를 추가할 수 없습니다.',
             409,
           );
+        afterCreate?.(decoded.id);
         return decoded;
       }
       const total = Number(
@@ -239,6 +258,13 @@ export class ManualEvidenceStore {
           snapshotHash,
           now,
         );
+      if (document)
+        this.db
+          .prepare(
+            'INSERT INTO research_manual_documents(manual_id,document_json) VALUES(?,?)',
+          )
+          .run(value.id, JSON.stringify(document));
+      afterCreate?.(value.id);
       return this.decode(
         this.db
           .prepare('SELECT * FROM research_manual_evidence WHERE id=?')

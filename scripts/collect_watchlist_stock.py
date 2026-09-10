@@ -14,7 +14,8 @@ from dotenv import load_dotenv
 from radar_pipeline import config
 from radar_pipeline.dart import DartClient, classify_event
 from radar_pipeline.market import completed_market_date, fetch_price_history
-from research.financials import normalize_financials, research_valuation
+from radar_pipeline.market_sources import current_listing
+from research.financials import normalize_financials, annual_financials, research_valuation, PARSER_VERSION
 from scripts.export_stock_details import write_json, finite
 
 SETTINGS = json.loads((config.ROOT / 'research/config.json').read_text(encoding='utf-8'))
@@ -72,12 +73,16 @@ class Collector:
         # Do not carry an old market cap into apparently current valuation ratios.
         market_cap = None
         warning = None
+        listing_source = '상장주식 수 미확인'
         try:
-            import FinanceDataReader as fdr
-            listing = fdr.StockListing('KRX')
+            listing = current_listing(market_date)
+            listing_source = listing.attrs.get('source', '상장종목 목록')
+            warning = ' '.join(listing.attrs.get('warnings', [])) or None
             row = listing[listing['Code'].astype(str).str.zfill(6) == self.code].iloc[0]
             shares = finite(row.get('Stocks'))
             market_cap = shares * close if shares and shares > 0 else None
+            if market_cap is None:
+                raise ValueError('상장주식 수가 없습니다')
         except Exception:
             warning = '최신 주식 수를 확인하지 못해 시가총액과 관련 배율을 표시하지 않습니다.'
         self.payload['prices'] = prices
@@ -85,7 +90,7 @@ class Collector:
             'price_as_of': market_date.isoformat(), 'market_cap_krw': market_cap, 'high_52w': high, 'low_52w': low,
             'drawdown_52w_pct': (close / high - 1) * 100 if high else None,
             'price_position_52w_pct': (close-low)/(high-low)*100 if high > low else None}
-        self.payload['source_status']['prices'] = {'status': 'ok' if market_cap is not None else 'partial', 'source': '네이버 금융 일별 시세 · KRX 상장주식 수',
+        self.payload['source_status']['prices'] = {'status': 'ok' if market_cap is not None else 'partial', 'source': f'네이버 금융 일별 시세 · {listing_source}',
             'as_of': market_date.isoformat(), 'collected_at': now(), 'run_id': self.job_id, 'record_count': len(prices), 'warning': warning}
         if self.payload.get('quarters'):
             self.payload['valuation'] = research_valuation(self.payload['quarters'], market_cap)
@@ -118,11 +123,14 @@ class Collector:
                     rows, basis = [], None
                     for fs_div in ('CFS', 'OFS'):
                         result = client.json('fnlttSinglAcntAll.json', {'corp_code': self.corp_code, 'bsns_year': str(period.year), 'reprt_code': period.report_code, 'fs_div': fs_div}, refresh=True)
+                        if result.get('status') not in ('000','013'):
+                            raise ValueError('DART 보고서 요청 오류')
                         if result.get('list'):
                             rows, basis = result['list'], fs_div
                             break
                     if not rows:
-                        raise ValueError('재무 보고서 미제공')
+                        states.append({'period': period.key, 'status': 'unavailable', 'warning': f'{period.year} {period.quarter} 보고서 미제공. 상장 전 또는 보고 대상이 아닌 기간일 수 있습니다.'})
+                        continue
                     receipt = next((row.get('rcept_no') for row in rows if re.fullmatch(r'\d{14}', str(row.get('rcept_no', '')))), None)
                     document = {'year': period.year, 'quarter': period.quarter, 'basis': basis, 'rows': rows, 'receipt_no': receipt, 'collected_at': now()}
                     write_json(raw_path, document)
@@ -134,18 +142,22 @@ class Collector:
             documents.append(document)
             states.append({'period': period.key, 'status': 'ok', 'collected_at': document['collected_at'], 'receipt_no': document.get('receipt_no'), 'basis': document['basis']})
         self.payload['financial_documents'] = states
-        if any(state['status'] != 'ok' for state in states):
+        if any(state['status'] == 'error' for state in states):
             raise RuntimeError('일부 재무 보고서 수집 실패')
         quarters = normalize_financials(documents, SETTINGS['financial_quarters'])
         if not quarters:
             raise RuntimeError('재무자료 없음')
         self.payload['quarters'] = quarters
+        self.payload['annual_financials'] = annual_financials(documents)[-5:]
+        self.payload['financial_parser_version'] = PARSER_VERSION
         self.payload['valuation'] = research_valuation(quarters, self.payload['summary'].get('market_cap_krw'))
         missing = sum(1 for row in quarters for key in ('rev', 'op', 'ni', 'ocf', 'equity', 'debt') if row.get(key) is None)
+        unavailable = sum(state['status'] == 'unavailable' for state in states)
         mixed = len({row['statement_basis'] for row in quarters[-4:]}) > 1
-        self.payload['source_status']['financials'] = {'status': 'partial' if missing or mixed else 'ok', 'source': 'DART 단일회사 전체 재무제표',
+        reconciliation = sum(bool(source.get('comparison_status')) for row in quarters for source in row['metric_sources'].values())
+        self.payload['source_status']['financials'] = {'status': 'partial' if missing or mixed or unavailable or reconciliation else 'ok', 'source': 'DART 단일회사 전체 재무제표',
             'as_of': f"{quarters[-1]['year']} {quarters[-1]['quarter']}", 'collected_at': now(), 'run_id': self.job_id, 'quarter_count': len(quarters),
-            'warning': f'{missing}개 재무 항목 미확인. 연결/별도 기준이 달라지는 구간은 합산하지 않습니다.' if missing or mixed else None}
+            'warning': f'{missing}개 주요 항목 미확인 · {unavailable}개 보고서 미제공 · {reconciliation}개 누적액 대조 필요. 기준이 다른 구간은 합산하지 않습니다.' if missing or mixed or unavailable or reconciliation else None}
 
     def filings(self):
         client = self.client()
@@ -182,7 +194,8 @@ class Collector:
         successful = 0
         for key, label, collect in [('prices', '가격', self.prices), ('financials', '재무', self.financials), ('dart_events', '공시', self.filings)]:
             old = self.original.get('source_status', {}).get(key, {})
-            if self.job['mode'] == 'retry' and old.get('status') == 'ok' and old.get('run_id'):
+            needs_parser_upgrade = key == 'financials' and self.original.get('financial_parser_version') != PARSER_VERSION
+            if self.job['mode'] == 'retry' and old.get('status') == 'ok' and old.get('run_id') and not needs_parser_upgrade:
                 successful += 1
                 continue
             self.save(f'{label} 자료를 보강합니다.')

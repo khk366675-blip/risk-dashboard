@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import contextlib
 import gzip
 import hashlib
-import io
 import json
 import math
 import re
@@ -14,9 +12,10 @@ from pathlib import Path
 from typing import Callable
 from zoneinfo import ZoneInfo
 
-import FinanceDataReader as fdr
 import pandas as pd
 import requests
+
+from radar_pipeline.market_sources import current_listing, listing_descriptions
 
 
 SEOUL = ZoneInfo("Asia/Seoul")
@@ -29,10 +28,19 @@ def _normalize_code(value: object) -> str:
     return text.zfill(6) if text else ""
 
 
-def collect_universe() -> pd.DataFrame:
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        listing = fdr.StockListing("KRX")
-        descriptions = fdr.StockListing("KRX-DESC")
+def collect_universe(market_date: date | None = None) -> pd.DataFrame:
+    market_date = market_date or completed_market_date()
+    listing = current_listing(market_date)
+    metadata = dict(listing.attrs)
+    warnings = list(metadata.get("warnings", []))
+    try:
+        descriptions = listing_descriptions(market_date)
+        metadata["descriptions_as_of"] = descriptions.attrs.get("as_of")
+        if metadata["descriptions_as_of"] != market_date.isoformat():
+            warnings.append(f"업종·상장일 정보는 {metadata['descriptions_as_of']} 자료입니다. 시세는 별도로 최신 수집합니다.")
+    except Exception as error:
+        descriptions = None
+        warnings.append(f"업종·상장일 정보 수집 실패: {type(error).__name__}. 해당 정보는 미확인으로 유지합니다.")
     if listing is None or listing.empty:
         raise RuntimeError("FinanceDataReader returned an empty KRX listing")
     listing = listing.copy()
@@ -43,7 +51,9 @@ def collect_universe() -> pd.DataFrame:
         keep = [column for column in ("Code", "Sector", "Industry", "ListingDate") if column in descriptions.columns]
         listing = listing.merge(descriptions[keep].drop_duplicates("Code"), on="Code", how="left")
     listing = listing[listing["Code"].str.fullmatch(r"\d{6}")].drop_duplicates("Code")
-    return listing.reset_index(drop=True)
+    listing = listing.reset_index(drop=True)
+    listing.attrs = {**metadata, "warnings": warnings}
+    return listing
 
 
 def completed_market_date(now: datetime | None = None) -> date:

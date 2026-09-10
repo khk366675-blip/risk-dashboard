@@ -15,6 +15,13 @@ from radar_pipeline import config
 
 QUARTER_ORDER = {"1Q": 1, "2Q": 2, "3Q": 3, "4Q": 4}
 
+def valuation_methodology(connection):
+    try:
+        row=connection.execute("SELECT value FROM collector_metadata WHERE key='financial_method_version'").fetchone()
+    except sqlite3.OperationalError:
+        return {}
+    return {'roe_basis':'closing','attribution_basis':'total','interest_basis':'interest'} if row and row[0]=='radar-verified-v2' else {}
+
 
 def finite(value: Any) -> float | None:
     try:
@@ -140,6 +147,7 @@ def stock_payload(
         else None
     )
     valuation_values = dict(valuation) if valuation else {}
+    methodology = valuation_methodology(connection)
     recent_ocf = [finite(item.get("ocf")) for item in quarters[-4:]]
     recent_periods = [item["year"] * 4 + QUARTER_ORDER[item["quarter"]] for item in quarters[-4:]]
     consecutive = len(recent_periods) == 4 and recent_periods == list(range(recent_periods[0], recent_periods[0] + 4))
@@ -166,6 +174,7 @@ def stock_payload(
             "price_position_52w_pct": price_position_52w_pct,
         },
         "valuation": {
+            **methodology,
             "per": finite(valuation_values.get("per")),
             "pbr": finite(valuation_values.get("pbr")),
             "ev_ebitda": None,
@@ -179,6 +188,7 @@ def stock_payload(
             "ttm_operating_cash_flow": ttm_ocf,
         },
         "quarters": quarters,
+        "radar_valuation_basis": methodology,
         "prices": prices,
         "events": events,
         "radar": candidate,

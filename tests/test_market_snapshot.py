@@ -53,8 +53,20 @@ class MarketSnapshotTests(unittest.TestCase):
             connection.close()
 
             listing = pd.DataFrame([{"Code": "000001", "Close": 170}, {"Code": "000002", "Close": 130}])
-            with patch("scripts.collect_markets.completed_market_date", return_value=date(2026, 9, 2)), patch("scripts.collect_markets.fdr.StockListing", return_value=listing):
+            listing.attrs["as_of"] = "2026-09-02"
+            with patch("scripts.collect_markets.completed_market_date", return_value=date(2026, 9, 2)), patch("scripts.collect_markets.current_listing", return_value=listing):
                 result = korea_breadth(database)
+            # Never stamp an intraday quote with the previous completed date.
+            listing["QuoteDate"] = "2026-09-03"
+            with patch("scripts.collect_markets.completed_market_date", return_value=date(2026, 9, 2)), patch("scripts.collect_markets.current_listing", return_value=listing):
+                intraday = korea_breadth(database)
+            self.assertEqual(intraday["status"], "stale")
+            self.assertNotEqual(intraday["as_of"], "2026-09-02")
+            with patch("scripts.collect_markets.completed_market_date", return_value=date(2026, 9, 3)), patch("scripts.collect_markets.current_listing") as fetch:
+                gap = korea_breadth(database, ["2026-09-02", "2026-09-03"])
+            self.assertEqual(gap["status"], "stale")
+            self.assertIn("중간 거래일", gap["warning"])
+            fetch.assert_not_called()
 
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["as_of"], "2026-09-02")

@@ -3,13 +3,34 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { findListedStock, searchListedStocks } from '../lib/server/listing-store.ts';
+import { findListedStock, parseListedStocks, searchListedStocks } from '../lib/server/listing-store.ts';
 import {
   manualCandidate,
   manualPreview,
   readRadar,
 } from '../lib/server/research-service.ts';
 import { ResearchStore } from '../lib/server/research-store.ts';
+
+test('listing accepts BOM before Code and the legacy unnamed index column', () => {
+  for (const bom of ['', '\uFEFF']) {
+    for (const legacyIndex of [false, true]) {
+      const header = `${legacyIndex ? ',' : ''}Code,Name,Market,Close,Marcap,Industry`;
+      const row = `${legacyIndex ? '0,' : ''}005930,삼성전자,KOSPI,100,1000,"전자, 반도체"`;
+      const [stock] = parseListedStocks(`${bom}${header}\r\n${row}\r\n`);
+      assert.equal(stock.code, '005930');
+      assert.equal(stock.name, '삼성전자');
+      assert.equal(stock.industry, '전자, 반도체');
+      assert.equal(stock.latest_price, 100);
+    }
+  }
+});
+
+test('listing still rejects missing required columns and preserves unknown values', () => {
+  assert.throws(() => parseListedStocks('\uFEFFName,Market\n삼성전자,KOSPI'), /목록 형식/);
+  const [stock] = parseListedStocks('\uFEFF"Code",Name,Market,Close,Marcap\n005930,삼성전자,KOSPI,,');
+  assert.equal(stock.latest_price, null);
+  assert.equal(stock.market_cap_krw, null);
+});
 
 test('listing search resolves an exact code and Korean company name', () => {
   const samsung = findListedStock('005930');

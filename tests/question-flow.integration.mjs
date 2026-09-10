@@ -104,6 +104,8 @@ try {
         VERCEL: '',
         OPENAI_API_KEY: '',
         THESIS_AI_API_KEY: '',
+        // Registration is tested over HTTP without invoking real collectors.
+        RADAR_PYTHON_EXECUTABLE: path.join(directory, 'no-collector-for-http-test'),
       },
     },
   );
@@ -257,6 +259,32 @@ try {
       'review must reach input validation, not reject local origin',
     );
   }
+  const manualCode = candidate.code === '005930' ? '000660' : '005930';
+  const registration = { source: 'manual', id: randomUUID(), reason: '격리 테스트 등록 이유' };
+  for (const host of ['localhost', '127.0.0.1']) {
+    const url = `http://${host}:${port}`;
+    const search = await fetch(`${url}/api/stocks/search?q=${manualCode}`);
+    assert.equal(search.status, 200, 'BOM-prefixed latest listing must be searchable');
+    const results = await search.json();
+    assert.equal(results.items[0].code, manualCode);
+    const response = await fetch(`${url}/api/watchlist/${manualCode}`, {
+      method: 'PUT',
+      headers: { Origin: url, 'Content-Type': 'application/json' },
+      body: JSON.stringify(registration),
+    });
+    const result = await response.json();
+    assert.ok([200, 202].includes(response.status), JSON.stringify(result));
+    assert.equal(result.record.item.active, true);
+    assert.equal(result.record.stock.radar.discovery, 'manual');
+    assert.deepEqual(result.record.stock.radar.matched_lenses, []);
+    assert.equal(result.items.filter((item) => item.code === manualCode).length, 1);
+    const points = await (await fetch(`${url}/api/watchlist/${manualCode}/theses`)).json();
+    assert.equal(points.items.length, 1);
+    assert.equal(points.items[0].content.body, registration.reason);
+  }
+  console.log(
+    'PASS: exact-code search and manual registration work on both hosts, registration reason persists, repeat requests do not duplicate; no real collectors.',
+  );
   console.log(
     'PASS: both local hosts adopt and unregister, retry deduplicates, evidence + answers survive unregister, stale/cross-origin writes rejected; no real AI calls.',
   );

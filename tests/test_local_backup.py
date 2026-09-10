@@ -44,6 +44,34 @@ class LocalBackupTests(unittest.TestCase):
     def create(self):
         return create_backup(self.root)
 
+    def test_pdf_attachment_and_separate_peer_database_roundtrip(self):
+        # Byte fixture tests storage checksums only, not PDF parsing.
+        content=b'attachment-checksum-fixture'
+        sha=digest(content)
+        relative=f'attachments/{sha}.pdf'
+        (self.directory/'attachments').mkdir()
+        (self.directory/relative).write_bytes(content)
+        self.db.execute('INSERT INTO pdf_documents(id,code,title,sha256,path,page_count,created_at) VALUES(?,?,?,?,?,?,?)',('pdf-test','000001','자료',sha,relative,1,'2026-09-09'))
+        self.db.execute("INSERT INTO dashboard_jobs(id,kind,state,step,started_at,updated_at) VALUES('running-job','markets','running','수집','2026-09-09','2026-09-09')")
+        self.db.commit()
+        peers=self.directory/'peers';peers.mkdir()
+        with closing(sqlite3.connect(peers/self.database_name)) as db:
+            db.executescript((ROOT/'research/schema.sql').read_text(encoding='utf-8'))
+            db.execute('INSERT INTO watchlist VALUES(?,?,?,?,?,?,?,?)',('000003','비교기업','{}','manual','2026-09-09','2026-09-09',1,'{}'))
+            db.execute('INSERT INTO research_jobs VALUES(?,?,?,?,?,?,?,?)',('000003','peer-job','running','all','수집',None,'2026-09-09',1234));db.commit()
+        file=self.create();manifest=self.verify(file)
+        self.assertIn('research/'+relative,manifest['files'])
+        self.assertIn('research/peers/'+self.database_name,manifest['files'])
+        restored=restore_backup(file,self.root.parent/'pdf-peer-restore',self.root)
+        self.assertEqual((restored/relative).read_bytes(),content)
+        with closing(sqlite3.connect(restored/'peers'/self.database_name)) as db:
+            self.assertEqual(db.execute('SELECT code FROM watchlist').fetchone()[0],'000003')
+            self.assertEqual(db.execute('SELECT state,pid FROM research_jobs').fetchone(),('error',None))
+        with closing(sqlite3.connect(restored/self.database_name)) as db:
+            self.assertEqual(db.execute('SELECT state FROM dashboard_jobs').fetchone()[0],'error')
+        (self.directory/relative).write_bytes(b'tampered')
+        with self.assertRaises(BackupError):self.create()
+
     def verify(self, file):
         return verify_archive(file, settings(self.root))
 

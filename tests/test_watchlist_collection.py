@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from datetime import date
+import pandas as pd
 
 from radar_pipeline import config
 from radar_pipeline.storage import SCHEMA
@@ -73,6 +75,23 @@ class WatchlistFinancialTests(unittest.TestCase):
 
 
 class WatchlistJobTests(unittest.TestCase):
+    def test_registered_stock_prices_use_bounded_listing_fallback(self):
+        collector = Collector.__new__(Collector)
+        collector.code, collector.job_id = '005930', 'test'
+        prices = [{'date': '2026-09-08', 'close': 100, 'high': 110, 'low': 90}]
+        listing = pd.DataFrame([{'Code': '005930', 'Stocks': 10}])
+        listing.attrs = {'source': 'Naver Finance market listing', 'warnings': ['KRX 목록 대신 최신 대체 자료 사용']}
+        for shares, status in [(10, 'ok'), (None, 'partial')]:
+            collector.payload = {'source_status': {}, 'valuation': {'per': 9}, 'quarters': []}
+            listing['Stocks'] = shares
+            with patch('scripts.collect_watchlist_stock.completed_market_date', return_value=date(2026, 9, 8)), patch('scripts.collect_watchlist_stock.fetch_price_history', return_value=('005930', prices, None)), patch('scripts.collect_watchlist_stock.current_listing', return_value=listing):
+                collector.prices()
+            source = collector.payload['source_status']['prices']
+            self.assertEqual(source['status'], status)
+            self.assertIn('Naver', source['source'])
+            self.assertTrue(source['warning'])
+            self.assertEqual(collector.payload['summary']['market_cap_krw'], 1000 if shares else None)
+
     def test_source_failure_keeps_registration_and_prior_data_retry_skips_success(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

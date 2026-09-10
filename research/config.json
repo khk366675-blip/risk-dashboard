@@ -9,7 +9,7 @@
   "followup_stale_hours": 72,
   "followup_price_points": 30,
   "followup_event_preview_limit": 6,
-  "financial_quarters": 8,
+  "financial_quarters": 24,
   "filing_lookback_days": 365,
   "filing_page_limit": 100
 }

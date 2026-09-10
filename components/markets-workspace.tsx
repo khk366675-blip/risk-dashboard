@@ -1,9 +1,10 @@
 'use client';
+import { runDashboardJob } from '@/lib/dashboard-jobs-client';
 import { useActionConfirmation } from '@/components/use-action-confirmation';
 import { PrimaryNavigation } from '@/components/primary-navigation';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import {
   Activity,
   BookOpen,
@@ -138,6 +139,8 @@ export function MarketsWorkspace({
   radarCount: number;
 }) {
   const [snapshot, setSnapshot] = useState<MarketSnapshot>(initialSnapshot);
+  const jobRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => jobRequest.current?.abort(), []);
   const [selectedKey, setSelectedKey] = useState(snapshot.assets[0]?.key ?? '');
   const [selectedGroup, setSelectedGroup] =
     useState<MarketGroup>('global_equity');
@@ -187,22 +190,14 @@ export function MarketsWorkspace({
     setRefreshMessage(null);
     setStatusOpen(true);
     try {
-      const response = await fetch('/api/markets/refresh', {
-        method: 'POST',
-        cache: 'no-store',
-      });
-      const payload = (await response.json()) as {
-        ok: boolean;
-        snapshot?: MarketSnapshot;
-        error?: string;
-        detail?: string;
+      jobRequest.current?.abort();
+      jobRequest.current = new AbortController();
+      const payload = {
+        snapshot: (await runDashboardJob(
+          'markets',
+          jobRequest.current.signal,
+        )) as MarketSnapshot,
       };
-      if (!response.ok || !payload.ok || !payload.snapshot)
-        throw new Error(
-          payload.detail ||
-            payload.error ||
-            '시장 데이터 갱신 응답이 올바르지 않습니다.',
-        );
       setSnapshot(payload.snapshot);
       const latest = payload.snapshot.assets.filter(
         (asset) => asset.freshness === 'latest',

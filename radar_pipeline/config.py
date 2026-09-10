@@ -15,6 +15,7 @@ PUBLIC_RADAR_PATH = ROOT / "public" / "data" / "radar" / "latest.json"
 PUBLIC_STOCK_DETAIL_DIR = ROOT / "public" / "data" / "stocks"
 PUBLIC_MARKET_PATH = ROOT / "public" / "data" / "markets" / "latest.json"
 INTERNAL_MARKET_PATH = ROOT / "data" / "market" / "markets_latest.json"
+MARKET_COLLECTOR_STATUS_PATH = DATA_DIR / "markets_collector_status.json"
 INTERNAL_RADAR_PATH = ROOT / "data" / "radar" / "latest.json"
 COLLECTOR_STATUS_PATH = DATA_DIR / "collector_status.json"
 DATABASE_PATH = DATA_DIR / "radar_market.db"
@@ -33,6 +34,14 @@ MIN_DART_FINANCIAL_COVERAGE_PCT = 75
 
 MARKET_LOOKBACK_CALENDAR_DAYS = 430
 MARKET_MAX_STALE_DAYS = 7
+MARKET_SOURCE_TIMEOUT_SECONDS = 25
+MARKET_FALLBACK_SYMBOLS = {"KS11": "YAHOO:^KS11", "KQ11": "YAHOO:^KQ11"}
+LISTING_HTTP_TIMEOUT_SECONDS = 12
+LISTING_DESCRIPTION_LOOKBACK_DAYS = 7
+LISTING_PAGE_SIZE = 100
+LISTING_MAX_PAGES = 60
+FDR_LISTING_CACHE_URL = "https://raw.githubusercontent.com/FinanceData/fdr_krx_data_cache/refs/heads/master/data/listing"
+NAVER_LISTING_URL = "https://m.stock.naver.com/api/stocks/marketValue"
 MARKET_ASSETS = (
     {"key": "sp500", "label": "S&P 500", "group": "global_equity", "symbol": "US500", "unit": "pt", "inverse": False},
     {"key": "nasdaq", "label": "Nasdaq", "group": "global_equity", "symbol": "IXIC", "unit": "pt", "inverse": False},

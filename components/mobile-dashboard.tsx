@@ -1,5 +1,7 @@
 'use client';
 
+import { RichMemoOpen } from '@/components/rich-memo-view';
+
 import { useMemo, useState } from 'react';
 import { generalMobileNoteCode } from '@/lib/mobile-note-target';
 import { useLocalDraft } from '@/components/draft-recovery';
@@ -157,10 +159,16 @@ function EvidenceRow({ item }: { item: MobileEvidenceItem }) {
         </span>
       </div>
       <h4 className="mt-2 text-xs font-semibold leading-5">{item.label}</h4>
-      {item.summary && (
-        <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-[11px] leading-5 text-slate-600">
-          {item.summary}
-        </p>
+      {item.document ? (
+        <div className="mt-2">
+          <RichMemoOpen document={item.document} title={item.label} />
+        </div>
+      ) : (
+        item.summary && (
+          <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-[11px] leading-5 text-slate-600">
+            {item.summary}
+          </p>
+        )
       )}
       {item.note && (
         <p className="mt-2 rounded-xl bg-slate-50 p-2 text-[10px] leading-5 text-slate-600">

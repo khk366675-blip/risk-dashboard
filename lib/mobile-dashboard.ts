@@ -1,4 +1,5 @@
 import type { Lens } from './radar-run';
+import type { RichMemo } from './rich-memo';
 import type { StockDetail } from './stock-detail';
 import type {
   JournalEntry,
@@ -52,6 +53,7 @@ export type MobileEvidenceItem = {
   relation: 'supports' | 'challenges' | 'context';
   label: string;
   summary: string;
+  document?: RichMemo | null;
   source: string;
   as_of: string | null;
   url: string | null;
